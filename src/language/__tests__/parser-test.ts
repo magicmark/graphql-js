@@ -690,25 +690,21 @@ describe('Parser', () => {
     it('parses Name', () => {
       const result = parseSchemaCoordinate('MyType');
       expectJSON(result).toDeepEqual({
-        kind: Kind.SCHEMA_COORDINATE,
+        kind: Kind.TYPE_COORDINATE,
         loc: { start: 0, end: 6 },
-        ofDirective: false,
         name: {
           kind: Kind.NAME,
           loc: { start: 0, end: 6 },
           value: 'MyType',
         },
-        memberName: undefined,
-        argumentName: undefined,
       });
     });
 
     it('parses Name . Name', () => {
       const result = parseSchemaCoordinate('MyType.field');
       expectJSON(result).toDeepEqual({
-        kind: Kind.SCHEMA_COORDINATE,
+        kind: Kind.MEMBER_COORDINATE,
         loc: { start: 0, end: 12 },
-        ofDirective: false,
         name: {
           kind: Kind.NAME,
           loc: { start: 0, end: 6 },
@@ -719,7 +715,6 @@ describe('Parser', () => {
           loc: { start: 7, end: 12 },
           value: 'field',
         },
-        argumentName: undefined,
       });
     });
 
@@ -735,9 +730,8 @@ describe('Parser', () => {
     it('parses Name . Name ( Name : )', () => {
       const result = parseSchemaCoordinate('MyType.field(arg:)');
       expectJSON(result).toDeepEqual({
-        kind: Kind.SCHEMA_COORDINATE,
+        kind: Kind.ARGUMENT_COORDINATE,
         loc: { start: 0, end: 18 },
-        ofDirective: false,
         name: {
           kind: Kind.NAME,
           loc: { start: 0, end: 6 },
@@ -768,31 +762,26 @@ describe('Parser', () => {
     it('parses @ Name', () => {
       const result = parseSchemaCoordinate('@myDirective');
       expectJSON(result).toDeepEqual({
-        kind: Kind.SCHEMA_COORDINATE,
+        kind: Kind.DIRECTIVE_COORDINATE,
         loc: { start: 0, end: 12 },
-        ofDirective: true,
         name: {
           kind: Kind.NAME,
           loc: { start: 1, end: 12 },
           value: 'myDirective',
         },
-        memberName: undefined,
-        argumentName: undefined,
       });
     });
 
     it('parses @ Name ( Name : )', () => {
       const result = parseSchemaCoordinate('@myDirective(arg:)');
       expectJSON(result).toDeepEqual({
-        kind: Kind.SCHEMA_COORDINATE,
+        kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
         loc: { start: 0, end: 18 },
-        ofDirective: true,
         name: {
           kind: Kind.NAME,
           loc: { start: 1, end: 12 },
           value: 'myDirective',
         },
-        memberName: undefined,
         argumentName: {
           kind: Kind.NAME,
           loc: { start: 13, end: 16 },

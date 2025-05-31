@@ -115,5 +115,11 @@ export function isTypeExtensionNode(node: ASTNode): node is TypeExtensionNode {
 export function isSchemaCoordinateNode(
   node: ASTNode,
 ): node is SchemaCoordinateNode {
-  return node.kind === Kind.SCHEMA_COORDINATE;
+  return (
+    node.kind === Kind.TYPE_COORDINATE ||
+    node.kind === Kind.MEMBER_COORDINATE ||
+    node.kind === Kind.ARGUMENT_COORDINATE ||
+    node.kind === Kind.DIRECTIVE_COORDINATE ||
+    node.kind === Kind.DIRECTIVE_ARGUMENT_COORDINATE
+  );
 }

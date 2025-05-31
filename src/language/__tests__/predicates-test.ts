@@ -145,7 +145,11 @@ describe('AST node predicates', () => {
 
   it('isSchemaCoordinateNode', () => {
     expect(filterNodes(isSchemaCoordinateNode)).to.deep.equal([
-      'SchemaCoordinate',
+      'ArgumentCoordinate',
+      'DirectiveArgumentCoordinate',
+      'DirectiveCoordinate',
+      'MemberCoordinate',
+      'TypeCoordinate',
     ]);
   });
 });

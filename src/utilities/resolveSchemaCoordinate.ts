@@ -81,15 +81,23 @@ export function resolveASTSchemaCoordinate(
   schema: GraphQLSchema,
   schemaCoordinate: SchemaCoordinateNode,
 ): ResolvedSchemaElement | undefined {
-  const { ofDirective, name, memberName, argumentName } = schemaCoordinate;
-  if (ofDirective) {
+  // const { ofDirective, name, memberName, argumentName } = schemaCoordinate;
+
+  if (
+    schemaCoordinate.kind === 'DirectiveCoordinate' ||
+    schemaCoordinate.kind === 'DirectiveArgumentCoordinate'
+  ) {
     // SchemaCoordinate :
     //   - @ Name
     //   - @ Name ( Name : )
     // Let {directiveName} be the value of the first {Name}.
     // Let {directive} be the directive in the {schema} named {directiveName}.
-    const directive = schema.getDirective(name.value);
-    if (!argumentName) {
+    const {
+      name: { value: directiveName },
+    } = schemaCoordinate;
+    const directive = schema.getDirective(directiveName);
+
+    if (schemaCoordinate.kind === 'DirectiveCoordinate') {
       // SchemaCoordinate : @ Name
       // Return the directive in the {schema} named {directiveName}.
       if (!directive) {
@@ -99,14 +107,17 @@ export function resolveASTSchemaCoordinate(
     }
 
     // SchemaCoordinate : @ Name ( Name : )
-    // Assert {directive} must exist.
+    // TODO: Assert {directive} must exist.
     if (!directive) {
       return;
     }
     // Let {directiveArgumentName} be the value of the second {Name}.
     // Return the argument of {directive} named {directiveArgumentName}.
+    const {
+      argumentName: { value: directiveArgumentName },
+    } = schemaCoordinate;
     const directiveArgument = directive.args.find(
-      (arg) => arg.name === argumentName.value,
+      (arg) => arg.name === directiveArgumentName,
     );
     if (!directiveArgument) {
       return;
@@ -120,8 +131,11 @@ export function resolveASTSchemaCoordinate(
   //   - Name . Name ( Name : )
   // Let {typeName} be the value of the first {Name}.
   // Let {type} be the type in the {schema} named {typeName}.
-  const type = schema.getType(name.value);
-  if (!memberName) {
+  const {
+    name: { value: typeName },
+  } = schemaCoordinate;
+  const type = schema.getType(typeName);
+  if (schemaCoordinate.kind === 'TypeCoordinate') {
     // SchemaCoordinate : Name
     // Return the type in the {schema} named {typeName}.
     if (!type) {
@@ -130,13 +144,17 @@ export function resolveASTSchemaCoordinate(
     return { kind: 'NamedType', type };
   }
 
-  if (!argumentName) {
+  const {
+    memberName: { value: memberName },
+  } = schemaCoordinate;
+
+  if (schemaCoordinate.kind === 'MemberCoordinate') {
     // SchemaCoordinate : Name . Name
     // If {type} is an Enum type:
     if (isEnumType(type)) {
       // Let {enumValueName} be the value of the second {Name}.
       // Return the enum value of {type} named {enumValueName}.
-      const enumValue = type.getValue(memberName.value);
+      const enumValue = type.getValue(memberName);
       if (enumValue == null) {
         return;
       }
@@ -146,7 +164,7 @@ export function resolveASTSchemaCoordinate(
     if (isInputObjectType(type)) {
       // Let {inputFieldName} be the value of the second {Name}.
       // Return the input field of {type} named {inputFieldName}.
-      const inputField = type.getFields()[memberName.value];
+      const inputField = type.getFields()[memberName];
       if (inputField == null) {
         return;
       }
@@ -159,7 +177,7 @@ export function resolveASTSchemaCoordinate(
     }
     // Let {fieldName} be the value of the second {Name}.
     // Return the field of {type} named {fieldName}.
-    const field = type.getFields()[memberName.value];
+    const field = type.getFields()[memberName];
     if (field == null) {
       return;
     }
@@ -173,15 +191,18 @@ export function resolveASTSchemaCoordinate(
   }
   // Let {fieldName} be the value of the second {Name}.
   // Let {field} be the field of {type} named {fieldName}.
-  const field = type.getFields()[memberName.value];
+  const field = type.getFields()[memberName];
   // Assert {field} must exist.
   if (field == null) {
     return;
   }
   // Let {fieldArgumentName} be the value of the third {Name}.
   // Return the argument of {field} named {fieldArgumentName}.
+  const {
+    argumentName: { value: fieldArgumentName },
+  } = schemaCoordinate;
   const fieldArgument = field.args.find(
-    (arg) => arg.name === argumentName.value,
+    (arg) => arg.name === fieldArgumentName,
   );
   if (fieldArgument == null) {
     return;

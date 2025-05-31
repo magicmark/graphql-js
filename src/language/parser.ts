@@ -4,6 +4,7 @@ import type { GraphQLError } from '../error/GraphQLError.js';
 import { syntaxError } from '../error/syntaxError.js';
 
 import type {
+  ArgumentCoordinateNode,
   ArgumentNode,
   BooleanValueNode,
   ConstArgumentNode,
@@ -13,6 +14,8 @@ import type {
   ConstObjectValueNode,
   ConstValueNode,
   DefinitionNode,
+  DirectiveArgumentCoordinateNode,
+  DirectiveCoordinateNode,
   DirectiveDefinitionNode,
   DirectiveNode,
   DocumentNode,
@@ -35,6 +38,7 @@ import type {
   IntValueNode,
   ListTypeNode,
   ListValueNode,
+  MemberCoordinateNode,
   NamedTypeNode,
   NameNode,
   NonNullTypeNode,
@@ -54,6 +58,7 @@ import type {
   SelectionSetNode,
   StringValueNode,
   Token,
+  TypeCoordinateNode,
   TypeNode,
   TypeSystemExtensionNode,
   UnionTypeDefinitionNode,
@@ -1481,12 +1486,42 @@ export class Parser {
       this.expectToken(TokenKind.COLON);
       this.expectToken(TokenKind.PAREN_R);
     }
-    return this.node<SchemaCoordinateNode>(start, {
-      kind: Kind.SCHEMA_COORDINATE,
-      ofDirective,
+
+    if (ofDirective && !argumentName) {
+      return this.node<DirectiveCoordinateNode>(start, {
+        kind: Kind.DIRECTIVE_COORDINATE,
+        name,
+      });
+    }
+
+    if (ofDirective && argumentName) {
+      return this.node<DirectiveArgumentCoordinateNode>(start, {
+        kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
+        name,
+        argumentName,
+      });
+    }
+
+    if (!ofDirective && memberName && argumentName) {
+      return this.node<ArgumentCoordinateNode>(start, {
+        kind: Kind.ARGUMENT_COORDINATE,
+        name,
+        memberName,
+        argumentName,
+      });
+    }
+
+    if (!ofDirective && memberName && !argumentName) {
+      return this.node<MemberCoordinateNode>(start, {
+        kind: Kind.MEMBER_COORDINATE,
+        name,
+        memberName,
+      });
+    }
+
+    return this.node<TypeCoordinateNode>(start, {
+      kind: Kind.TYPE_COORDINATE,
       name,
-      memberName,
-      argumentName,
     });
   }
 
