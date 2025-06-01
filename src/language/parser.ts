@@ -1487,31 +1487,27 @@ export class Parser {
       this.expectToken(TokenKind.PAREN_R);
     }
 
-    if (ofDirective && !argumentName) {
+    if (ofDirective) {
+      if (argumentName) {
+        return this.node<DirectiveArgumentCoordinateNode>(start, {
+          kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
+          name,
+          argumentName,
+        });
+      }
       return this.node<DirectiveCoordinateNode>(start, {
         kind: Kind.DIRECTIVE_COORDINATE,
         name,
       });
-    }
-
-    if (ofDirective && argumentName) {
-      return this.node<DirectiveArgumentCoordinateNode>(start, {
-        kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
-        name,
-        argumentName,
-      });
-    }
-
-    if (!ofDirective && memberName && argumentName) {
-      return this.node<ArgumentCoordinateNode>(start, {
-        kind: Kind.ARGUMENT_COORDINATE,
-        name,
-        memberName,
-        argumentName,
-      });
-    }
-
-    if (!ofDirective && memberName && !argumentName) {
+    } else if (memberName) {
+      if (argumentName) {
+        return this.node<ArgumentCoordinateNode>(start, {
+          kind: Kind.ARGUMENT_COORDINATE,
+          name,
+          memberName,
+          argumentName,
+        });
+      }
       return this.node<MemberCoordinateNode>(start, {
         kind: Kind.MEMBER_COORDINATE,
         name,
