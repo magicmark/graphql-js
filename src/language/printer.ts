@@ -330,8 +330,8 @@ const printDocASTReducer: ASTReducer<string> = {
   },
 
   ArgumentCoordinate: {
-    leave: ({ name, memberName, argumentName }) =>
-      join([name, wrap('.', memberName), wrap('(', argumentName, ':)')]),
+    leave: ({ name, fieldName, argumentName }) =>
+      join([name, wrap('.', fieldName), wrap('(', argumentName, ':)')]),
   },
 
   DirectiveCoordinate: { leave: ({ name }) => join(['@', name]) },

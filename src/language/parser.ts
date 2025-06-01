@@ -1504,7 +1504,7 @@ export class Parser {
         return this.node<ArgumentCoordinateNode>(start, {
           kind: Kind.ARGUMENT_COORDINATE,
           name,
-          memberName,
+          fieldName: memberName,
           argumentName,
         });
       }

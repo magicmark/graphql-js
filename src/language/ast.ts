@@ -296,7 +296,7 @@ export const QueryDocumentKeys: {
   // Schema Coordinates
   TypeCoordinate: ['name'],
   MemberCoordinate: ['name', 'memberName'],
-  ArgumentCoordinate: ['name', 'memberName', 'argumentName'],
+  ArgumentCoordinate: ['name', 'fieldName', 'argumentName'],
   DirectiveCoordinate: ['name'],
   DirectiveArgumentCoordinate: ['name', 'argumentName'],
 };
@@ -801,7 +801,7 @@ export interface ArgumentCoordinateNode {
   readonly kind: typeof Kind.ARGUMENT_COORDINATE;
   readonly loc?: Location;
   readonly name: NameNode;
-  readonly memberName: NameNode;
+  readonly fieldName: NameNode;
   readonly argumentName: NameNode;
 }
 

@@ -144,11 +144,11 @@ export function resolveASTSchemaCoordinate(
     return { kind: 'NamedType', type };
   }
 
-  const {
-    memberName: { value: memberName },
-  } = schemaCoordinate;
-
   if (schemaCoordinate.kind === 'MemberCoordinate') {
+    const {
+      memberName: { value: memberName },
+    } = schemaCoordinate;
+
     // SchemaCoordinate : Name . Name
     // If {type} is an Enum type:
     if (isEnumType(type)) {
@@ -184,6 +184,10 @@ export function resolveASTSchemaCoordinate(
     return { kind: 'Field', type, field };
   }
 
+  const {
+    fieldName: { value: fieldName },
+  } = schemaCoordinate;
+
   // SchemaCoordinate : Name . Name ( Name : )
   // Assert {type} must be an Object or Interface type.
   if (!isObjectType(type) && !isInterfaceType(type)) {
@@ -191,7 +195,7 @@ export function resolveASTSchemaCoordinate(
   }
   // Let {fieldName} be the value of the second {Name}.
   // Let {field} be the field of {type} named {fieldName}.
-  const field = type.getFields()[memberName];
+  const field = type.getFields()[fieldName];
   // Assert {field} must exist.
   if (field == null) {
     return;

@@ -737,7 +737,7 @@ describe('Parser', () => {
           loc: { start: 0, end: 6 },
           value: 'MyType',
         },
-        memberName: {
+        fieldName: {
           kind: Kind.NAME,
           loc: { start: 7, end: 12 },
           value: 'field',
