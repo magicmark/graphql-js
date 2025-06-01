@@ -81,8 +81,6 @@ export function resolveASTSchemaCoordinate(
   schema: GraphQLSchema,
   schemaCoordinate: SchemaCoordinateNode,
 ): ResolvedSchemaElement | undefined {
-  // const { ofDirective, name, memberName, argumentName } = schemaCoordinate;
-
   if (
     schemaCoordinate.kind === 'DirectiveCoordinate' ||
     schemaCoordinate.kind === 'DirectiveArgumentCoordinate'
