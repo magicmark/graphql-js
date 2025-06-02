@@ -99,83 +99,23 @@ export function resolveSchemaCoordinate(
 }
 
 /**
- * SchemaCoordinate : @ Name
- */
-function resolveDirectiveCoordinate(
-  schema: GraphQLSchema,
-  schemaCoordinate: DirectiveCoordinateNode,
-): ResolvedDirective | undefined {
-  // Let {directiveName} be the value of the first {Name}.
-  const directiveName = schemaCoordinate.name.value;
-
-  // Let {directive} be the directive in the {schema} named {directiveName}.
-  const directive = schema.getDirective(directiveName);
-
-  // If {directive} does not exist, return undefined.
-  if (!directive) {
-    return;
-  }
-
-  // Otherwise return the directive in the {schema} named {directiveName}.
-  return { kind: 'Directive', directive };
-}
-
-/**
- * SchemaCoordinate : @ Name ( Name : )
- */
-function resolveDirectiveArgumentCoordinate(
-  schema: GraphQLSchema,
-  schemaCoordinate: DirectiveArgumentCoordinateNode,
-): ResolvedDirectiveArgument | undefined {
-  // Let {directiveName} be the value of the first {Name}.
-  const directiveName = schemaCoordinate.name.value;
-
-  // Let {directive} be the directive in the {schema} named {directiveName}.
-  const directive = schema.getDirective(directiveName);
-
-  // Assert that {directive} exists.
-  if (!directive) {
-    throw new Error(
-      `Expected ${inspect(directiveName)} to be defined as a directive in the schema.`,
-    );
-  }
-
-  // Let {directiveArgumentName} be the value of the second {Name}.
-  const {
-    argumentName: { value: directiveArgumentName },
-  } = schemaCoordinate;
-  const directiveArgument = directive.args.find(
-    (arg) => arg.name === directiveArgumentName,
-  );
-
-  // If {directiveArgumentName} does not exist, return undefined.
-  if (!directiveArgument) {
-    return;
-  }
-
-  // Return the argument of {directive} named {directiveArgumentName}.
-  return { kind: 'DirectiveArgument', directive, directiveArgument };
-}
-
-/**
  * SchemaCoordinate : Name
  */
 function resolveTypeCoordinate(
   schema: GraphQLSchema,
   schemaCoordinate: TypeCoordinateNode,
 ): ResolvedNamedType | undefined {
-  // Let {typeName} be the value of the first {Name}.
+  // 1. Let {typeName} be the value of the first {Name}.
+  // 2. Let {type} be the type in the {schema} named {typeName}.
   const typeName = schemaCoordinate.name.value;
-
-  // Let {type} be the type in the {schema} named {typeName}.
   const type = schema.getType(typeName);
 
-  // If {type} does not exist, return undefined.
+  // 3. If {type} does not exist, return {void}.
   if (!type) {
     return;
   }
 
-  // Return the type in the {schema} named {typeName}.
+  // 4. {type}
   return { kind: 'NamedType', type };
 }
 
@@ -186,66 +126,69 @@ function resolveMemberCoordinate(
   schema: GraphQLSchema,
   schemaCoordinate: MemberCoordinateNode,
 ): ResolvedField | ResolvedInputField | ResolvedEnumValue | undefined {
-  // Let {typeName} be the value of the first {Name}.
+  // 1. Let {typeName} be the value of the first {Name}.
+  // 2. Let {type} be the type in the {schema} named {typeName}.
   const typeName = schemaCoordinate.name.value;
-
-  // Let {type} be the type in the {schema} named {typeName}.
   const type = schema.getType(typeName);
 
-  // Assert that {type} exists.
+  // 3. Assert that {type} exists.
   if (!type) {
     throw new Error(
       `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
     );
   }
 
-  const memberName = schemaCoordinate.memberName.value;
-
-  // If {type} is an Enum type:
+  // 4. If {type} is an Enum type:
   if (isEnumType(type)) {
-    // Let {enumValueName} be the value of the second {Name}.
-    const enumValue = type.getValue(memberName);
+    // 5. Let {enumValueName} be the value of the second {Name}.
+    // 6. Let {enumValue} be the enum value of {type} named {enumValueName}.
+    const enumValueName = schemaCoordinate.memberName.value;
+    const enumValue = type.getValue(enumValueName);
 
-    // TODO: Add a spec line about returning undefined if the member name does not exist.
+    // 7. If {enumValue} does not exist, return {void}.
     if (enumValue == null) {
       return;
     }
 
-    // Return the enum value of {type} named {enumValueName}.
+    // 8. Return {enumValue}
     return { kind: 'EnumValue', type, enumValue };
   }
 
-  // Otherwise if {type} is an Input Object type:
+  // 9. Otherwise if {type} is an Input Object type:
   if (isInputObjectType(type)) {
-    // Let {inputFieldName} be the value of the second {Name}.
-    const inputField = type.getFields()[memberName];
+    // 10. Let {inputFieldName} be the value of the second {Name}.
+    // 11. Let {inputField} be the input field of {type} named {inputFieldName}.
+    const inputFieldName = schemaCoordinate.memberName.value;
+    const inputField = type.getFields()[inputFieldName];
 
-    // TODO: Add a spec line about returning undefined if the member name does not exist.
+    // 12. If {inputField} does not exist, return {void}.
     if (inputField == null) {
       return;
     }
 
-    // Return the input field of {type} named {inputFieldName}.
+    // 13. Return {inputField}
     return { kind: 'InputField', type, inputField };
   }
 
-  // Otherwise:
-  // Assert {type} must be an Object or Interface type.
+  // 14. Otherwise:
+  // 15. Assert {type} must be an Object or Interface type.
   if (!isObjectType(type) && !isInterfaceType(type)) {
     throw new Error(
       `Expected ${inspect(typeName)} to be an object type, interface type, input object type, or enum type.`,
     );
   }
 
-  // Let {fieldName} be the value of the second {Name}.
-  const field = type.getFields()[memberName];
+  // 16. Let {fieldName} be the value of the second {Name}.
+  // 17. Let {field} be the field of {type} named {fieldName}.
+  const fieldName = schemaCoordinate.memberName.value;
+  const field = type.getFields()[fieldName];
 
-  // TODO: Add a spec line about returning undefined if the member name does not exist.
+  // 18. If {field} does not exist, return {void}.
   if (field == null) {
     return;
   }
 
-  // Return the field of {type} named {fieldName}.
+  // 19. Return {field}
   return { kind: 'Field', type, field };
 }
 
@@ -256,52 +199,109 @@ function resolveArgumentCoordinate(
   schema: GraphQLSchema,
   schemaCoordinate: ArgumentCoordinateNode,
 ): ResolvedFieldArgument | undefined {
-  // Let {typeName} be the value of the first {Name}.
+  // 1. Let {typeName} be the value of the first {Name}.
+  // 2. Let {type} be the type in the {schema} named {typeName}.
   const typeName = schemaCoordinate.name.value;
-
-  // Let {type} be the type in the {schema} named {typeName}.
   const type = schema.getType(typeName);
 
-  // Assert that {type} exists.
-  if (!type) {
+  // 3. Assert that {type} exists.
+  if (type == null) {
     throw new Error(
       `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
     );
   }
 
-  const fieldName = schemaCoordinate.fieldName.value;
-
-  // Assert {type} must be an Object or Interface type.
+  // 4. Assert {type} must be an Object or Interface type.
   if (!isObjectType(type) && !isInterfaceType(type)) {
     throw new Error(
       `Expected ${inspect(typeName)} to be an object type or interface type.`,
     );
   }
 
-  // Let {fieldName} be the value of the second {Name}.
-  // Let {field} be the field of {type} named {fieldName}.
+  // 5. Let {fieldName} be the value of the second {Name}.
+  // 6. Let {field} be the field of {type} named {fieldName}.
+  const fieldName = schemaCoordinate.fieldName.value;
   const field = type.getFields()[fieldName];
 
-  // Assert {field} must exist.
+  // 7. Assert {field} must exist.
   if (field == null) {
     throw new Error(
       `Expected ${inspect(fieldName)} to exist as a field of type ${inspect(typeName)} in the schema.`,
     );
   }
 
-  // Let {fieldArgumentName} be the value of the third {Name}.
+  // 8. Let {fieldArgumentName} be the value of the third {Name}.
+  // 9. Let {fieldArgument} be the argument of {field} named {fieldArgumentName}.
   const fieldArgumentName = schemaCoordinate.argumentName.value;
   const fieldArgument = field.args.find(
     (arg) => arg.name === fieldArgumentName,
   );
 
-  // TODO: Add a spec line about returning undefined if the argument does not exist.
+  // 10. If {fieldArgument} does not exist, return {void}.
   if (fieldArgument == null) {
     return;
   }
 
-  // Return the argument of {field} named {fieldArgumentName}.
+  // 11. Return {fieldArgument}.
   return { kind: 'FieldArgument', type, field, fieldArgument };
+}
+
+/**
+ * SchemaCoordinate : @ Name
+ */
+function resolveDirectiveCoordinate(
+  schema: GraphQLSchema,
+  schemaCoordinate: DirectiveCoordinateNode,
+): ResolvedDirective | undefined {
+  // 1. Let {directiveName} be the value of the first {Name}.
+  // 2. Let {directive} be the directive in the {schema} named {directiveName}.
+  const directiveName = schemaCoordinate.name.value;
+  const directive = schema.getDirective(directiveName);
+
+  // 3. If {directive} does not exist, return {void}.
+  if (!directive) {
+    return;
+  }
+
+  // 4. Otherwise return {directive}.
+  return { kind: 'Directive', directive };
+}
+
+/**
+ * SchemaCoordinate : @ Name ( Name : )
+ */
+function resolveDirectiveArgumentCoordinate(
+  schema: GraphQLSchema,
+  schemaCoordinate: DirectiveArgumentCoordinateNode,
+): ResolvedDirectiveArgument | undefined {
+  // 1. Let {directiveName} be the value of the first {Name}.
+  // 2. Let {directive} be the directive in the {schema} named {directiveName}.
+  const directiveName = schemaCoordinate.name.value;
+  const directive = schema.getDirective(directiveName);
+
+  // 3. Assert {directive} must exist.
+  if (!directive) {
+    throw new Error(
+      `Expected ${inspect(directiveName)} to be defined as a directive in the schema.`,
+    );
+  }
+
+  // 4. Let {directiveArgumentName} be the value of the second {Name}.
+  // 5. Let {directiveArgument} be the argument of {directive} named {directiveArgumentName}.
+  const {
+    argumentName: { value: directiveArgumentName },
+  } = schemaCoordinate;
+  const directiveArgument = directive.args.find(
+    (arg) => arg.name === directiveArgumentName,
+  );
+
+  // 6. If {directiveArgument} does not exist, return {void}.
+  if (!directiveArgument) {
+    return;
+  }
+
+  // 7. Return {directiveArgument}.
+  return { kind: 'DirectiveArgument', directive, directiveArgument };
 }
 
 /**
