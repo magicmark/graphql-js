@@ -285,7 +285,7 @@ function resolveArgumentCoordinate(
   // Assert {field} must exist.
   if (field == null) {
     throw new Error(
-      `Expected ${inspect(fieldName)} to exist as an argument of type ${inspect(typeName)} in the schema.`,
+      `Expected ${inspect(fieldName)} to exist as a field of type ${inspect(typeName)} in the schema.`,
     );
   }
 
