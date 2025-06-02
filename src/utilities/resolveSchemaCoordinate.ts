@@ -110,7 +110,7 @@ function resolveTypeCoordinate(
   const typeName = schemaCoordinate.name.value;
   const type = schema.getType(typeName);
 
-  // 3. If {type} does not exist, return {void}.
+  // 3. If {type} does not exist, return {null}.
   if (!type) {
     return;
   }
@@ -145,7 +145,7 @@ function resolveMemberCoordinate(
     const enumValueName = schemaCoordinate.memberName.value;
     const enumValue = type.getValue(enumValueName);
 
-    // 7. If {enumValue} does not exist, return {void}.
+    // 7. If {enumValue} does not exist, return {null}.
     if (enumValue == null) {
       return;
     }
@@ -161,7 +161,7 @@ function resolveMemberCoordinate(
     const inputFieldName = schemaCoordinate.memberName.value;
     const inputField = type.getFields()[inputFieldName];
 
-    // 12. If {inputField} does not exist, return {void}.
+    // 12. If {inputField} does not exist, return {null}.
     if (inputField == null) {
       return;
     }
@@ -183,7 +183,7 @@ function resolveMemberCoordinate(
   const fieldName = schemaCoordinate.memberName.value;
   const field = type.getFields()[fieldName];
 
-  // 18. If {field} does not exist, return {void}.
+  // 18. If {field} does not exist, return {null}.
   if (field == null) {
     return;
   }
@@ -237,7 +237,7 @@ function resolveArgumentCoordinate(
     (arg) => arg.name === fieldArgumentName,
   );
 
-  // 10. If {fieldArgument} does not exist, return {void}.
+  // 10. If {fieldArgument} does not exist, return {null}.
   if (fieldArgument == null) {
     return;
   }
@@ -258,7 +258,7 @@ function resolveDirectiveCoordinate(
   const directiveName = schemaCoordinate.name.value;
   const directive = schema.getDirective(directiveName);
 
-  // 3. If {directive} does not exist, return {void}.
+  // 3. If {directive} does not exist, return {null}.
   if (!directive) {
     return;
   }
@@ -295,7 +295,7 @@ function resolveDirectiveArgumentCoordinate(
     (arg) => arg.name === directiveArgumentName,
   );
 
-  // 6. If {directiveArgument} does not exist, return {void}.
+  // 6. If {directiveArgument} does not exist, return {null}.
   if (!directiveArgument) {
     return;
   }
