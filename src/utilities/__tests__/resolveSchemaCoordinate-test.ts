@@ -71,7 +71,7 @@ describe('resolveSchemaCoordinate', () => {
     );
 
     expect(() => resolveSchemaCoordinate(schema, 'String.field')).to.throw(
-      'Expected "String" to be defined as a type in the schema.',
+      'Expected "String" to be an object type, interface type, input object type, or enum type.',
     );
   });
 
