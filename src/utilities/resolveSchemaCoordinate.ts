@@ -131,7 +131,7 @@ function resolveMemberCoordinate(
   const typeName = schemaCoordinate.name.value;
   const type = schema.getType(typeName);
 
-  // 3. Assert that {type} exists.
+  // 3. Assert {type} exists.
   if (!type) {
     throw new Error(
       `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
@@ -204,7 +204,7 @@ function resolveArgumentCoordinate(
   const typeName = schemaCoordinate.name.value;
   const type = schema.getType(typeName);
 
-  // 3. Assert that {type} exists.
+  // 3. Assert {type} exists.
   if (type == null) {
     throw new Error(
       `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
