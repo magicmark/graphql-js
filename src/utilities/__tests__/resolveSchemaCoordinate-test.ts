@@ -137,7 +137,7 @@ describe('resolveSchemaCoordinate', () => {
     expect(() =>
       resolveSchemaCoordinate(schema, 'Business.unknown(arg:)'),
     ).to.throw(
-      'Expected "unknown" to exist as an argument of type "Business" in the schema.',
+      'Expected "unknown" to exist as a field of type "Business" in the schema.',
     );
 
     expect(() =>
