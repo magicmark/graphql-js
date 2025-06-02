@@ -143,7 +143,7 @@ describe('resolveSchemaCoordinate', () => {
     expect(() =>
       resolveSchemaCoordinate(schema, 'SearchCriteria.name(arg:)'),
     ).to.throw(
-      'Expected "SearchCriteria" to be defined as a type in the schema.',
+      'Expected "SearchCriteria" to be an object type or interface type.',
     );
   });
 
