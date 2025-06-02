@@ -233,7 +233,7 @@ function resolveMemberCoordinate(
   // Assert {type} must be an Object or Interface type.
   if (!isObjectType(type) && !isInterfaceType(type)) {
     throw new Error(
-      `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
+      `Expected ${inspect(typeName)} to be an object type, interface type, input object type, or enum type.`,
     );
   }
 
