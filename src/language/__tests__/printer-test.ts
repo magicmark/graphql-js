@@ -308,6 +308,9 @@ describe('Printer: Query document', () => {
     expect(print(parseSchemaCoordinate('  Name . field ( arg: )'))).to.equal(
       'Name.field(arg:)',
     );
+    expect(print(parseSchemaCoordinate('  Name :: Name '))).to.equal(
+      'Name::Name',
+    );
     expect(print(parseSchemaCoordinate(' @ name  '))).to.equal('@name');
     expect(print(parseSchemaCoordinate(' @ name (arg:) '))).to.equal(
       '@name(arg:)',

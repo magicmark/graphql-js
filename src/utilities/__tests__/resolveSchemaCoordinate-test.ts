@@ -111,6 +111,14 @@ describe('resolveSchemaCoordinate', () => {
     expect(
       resolveSchemaCoordinate(schema, 'SearchFilter::UNKNOWN'),
     ).to.deep.equal(undefined);
+
+    expect(() => resolveSchemaCoordinate(schema, 'Unknown::UNKNOWN')).to.throw(
+      'Expected "Unknown" to be defined as a type in the schema.',
+    );
+
+    expect(() => resolveSchemaCoordinate(schema, 'Business::id')).to.throw(
+      'Expected "Business" to be an Enum type.',
+    );
   });
 
   it('resolves a Field Argument', () => {
