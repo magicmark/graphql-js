@@ -4,6 +4,7 @@ import type { GraphQLError } from '../error/GraphQLError.js';
 import { syntaxError } from '../error/syntaxError.js';
 
 import type {
+  ArgumentCoordinateNode,
   ArgumentNode,
   BooleanValueNode,
   ConstArgumentNode,
@@ -13,6 +14,8 @@ import type {
   ConstObjectValueNode,
   ConstValueNode,
   DefinitionNode,
+  DirectiveArgumentCoordinateNode,
+  DirectiveCoordinateNode,
   DirectiveDefinitionNode,
   DirectiveNode,
   DocumentNode,
@@ -20,6 +23,7 @@ import type {
   EnumTypeExtensionNode,
   EnumValueDefinitionNode,
   EnumValueNode,
+  FieldCoordinateNode,
   FieldDefinitionNode,
   FieldNode,
   FloatValueNode,
@@ -54,10 +58,12 @@ import type {
   SelectionSetNode,
   StringValueNode,
   Token,
+  TypeCoordinateNode,
   TypeNode,
   TypeSystemExtensionNode,
   UnionTypeDefinitionNode,
   UnionTypeExtensionNode,
+  ValueCoordinateNode,
   ValueNode,
   VariableDefinitionNode,
   VariableNode,
@@ -1461,6 +1467,7 @@ export class Parser {
    *   - Name
    *   - Name . Name
    *   - Name . Name ( Name : )
+   *   - Name :: Name
    *   - @ Name
    *   - @ Name ( Name : )
    */
@@ -1468,6 +1475,16 @@ export class Parser {
     const start = this._lexer.token;
     const ofDirective = this.expectOptionalToken(TokenKind.AT);
     const name = this.parseName();
+
+    if (!ofDirective && this.expectOptionalToken(TokenKind.TWO_COLON)) {
+      const valueName = this.parseName();
+      return this.node<ValueCoordinateNode>(start, {
+        kind: Kind.VALUE_COORDINATE,
+        name,
+        valueName,
+      });
+    }
+
     let memberName: NameNode | undefined;
     if (!ofDirective && this.expectOptionalToken(TokenKind.DOT)) {
       memberName = this.parseName();
@@ -1481,12 +1498,38 @@ export class Parser {
       this.expectToken(TokenKind.COLON);
       this.expectToken(TokenKind.PAREN_R);
     }
-    return this.node<SchemaCoordinateNode>(start, {
-      kind: Kind.SCHEMA_COORDINATE,
-      ofDirective,
+
+    if (ofDirective) {
+      if (argumentName) {
+        return this.node<DirectiveArgumentCoordinateNode>(start, {
+          kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
+          name,
+          argumentName,
+        });
+      }
+      return this.node<DirectiveCoordinateNode>(start, {
+        kind: Kind.DIRECTIVE_COORDINATE,
+        name,
+      });
+    } else if (memberName) {
+      if (argumentName) {
+        return this.node<ArgumentCoordinateNode>(start, {
+          kind: Kind.ARGUMENT_COORDINATE,
+          name,
+          fieldName: memberName,
+          argumentName,
+        });
+      }
+      return this.node<FieldCoordinateNode>(start, {
+        kind: Kind.FIELD_COORDINATE,
+        name,
+        fieldName: memberName,
+      });
+    }
+
+    return this.node<TypeCoordinateNode>(start, {
+      kind: Kind.TYPE_COORDINATE,
       name,
-      memberName,
-      argumentName,
     });
   }
 

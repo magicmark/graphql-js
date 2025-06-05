@@ -110,5 +110,21 @@ export const INPUT_OBJECT_TYPE_EXTENSION = 'InputObjectTypeExtension';
 export type INPUT_OBJECT_TYPE_EXTENSION = typeof INPUT_OBJECT_TYPE_EXTENSION;
 
 /** Schema Coordinates */
-export const SCHEMA_COORDINATE = 'SchemaCoordinate';
-export type SCHEMA_COORDINATE = typeof SCHEMA_COORDINATE;
+export const TYPE_COORDINATE = 'TypeCoordinate';
+export type TYPE_COORDINATE = typeof TYPE_COORDINATE;
+
+export const FIELD_COORDINATE = 'FieldCoordinate';
+export type FIELD_COORDINATE = typeof FIELD_COORDINATE;
+
+export const ARGUMENT_COORDINATE = 'ArgumentCoordinate';
+export type ARGUMENT_COORDINATE = typeof ARGUMENT_COORDINATE;
+
+export const VALUE_COORDINATE = 'ValueCoordinate';
+export type VALUE_COORDINATE = typeof VALUE_COORDINATE;
+
+export const DIRECTIVE_COORDINATE = 'DirectiveCoordinate';
+export type DIRECTIVE_COORDINATE = typeof DIRECTIVE_COORDINATE;
+
+export const DIRECTIVE_ARGUMENT_COORDINATE = 'DirectiveArgumentCoordinate';
+export type DIRECTIVE_ARGUMENT_COORDINATE =
+  typeof DIRECTIVE_ARGUMENT_COORDINATE;
