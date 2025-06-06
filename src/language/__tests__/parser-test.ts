@@ -703,14 +703,14 @@ describe('Parser', () => {
     it('parses Name . Name', () => {
       const result = parseSchemaCoordinate('MyType.field');
       expectJSON(result).toDeepEqual({
-        kind: Kind.FIELD_COORDINATE,
+        kind: Kind.MEMBER_COORDINATE,
         loc: { start: 0, end: 12 },
         name: {
           kind: Kind.NAME,
           loc: { start: 0, end: 6 },
           value: 'MyType',
         },
-        fieldName: {
+        memberName: {
           kind: Kind.NAME,
           loc: { start: 7, end: 12 },
           value: 'field',
@@ -725,24 +725,6 @@ describe('Parser', () => {
           message: 'Syntax Error: Expected <EOF>, found ".".',
           locations: [{ line: 1, column: 13 }],
         });
-    });
-
-    it('parses Name :: Name', () => {
-      const result = parseSchemaCoordinate('MyEnum::value');
-      expectJSON(result).toDeepEqual({
-        kind: Kind.VALUE_COORDINATE,
-        loc: { start: 0, end: 13 },
-        name: {
-          kind: Kind.NAME,
-          loc: { start: 0, end: 6 },
-          value: 'MyEnum',
-        },
-        valueName: {
-          kind: Kind.NAME,
-          loc: { start: 8, end: 13 },
-          value: 'value',
-        },
-      });
     });
 
     it('parses Name . Name ( Name : )', () => {

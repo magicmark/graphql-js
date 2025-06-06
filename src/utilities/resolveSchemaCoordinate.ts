@@ -4,10 +4,9 @@ import type {
   ArgumentCoordinateNode,
   DirectiveArgumentCoordinateNode,
   DirectiveCoordinateNode,
-  FieldCoordinateNode,
+  MemberCoordinateNode,
   SchemaCoordinateNode,
   TypeCoordinateNode,
-  ValueCoordinateNode,
 } from '../language/ast.js';
 import { Kind } from '../language/kinds.js';
 import { parseSchemaCoordinate } from '../language/parser.js';
@@ -119,37 +118,52 @@ function resolveTypeCoordinate(
 }
 
 /**
- * FieldCoordinate : Name . Name
+ * MemberCoordinate : Name . Name
  */
-function resolveFieldCoordinate(
+function resolveMemberCoordinate(
   schema: GraphQLSchema,
-  schemaCoordinate: FieldCoordinateNode,
-): ResolvedField | ResolvedInputField | undefined {
+  schemaCoordinate: MemberCoordinateNode,
+): ResolvedField | ResolvedInputField | ResolvedEnumValue | undefined {
   // 1. Let {typeName} be the value of the first {Name}.
   // 2. Let {type} be the type in the {schema} named {typeName}.
   const typeName = schemaCoordinate.name.value;
   const type = schema.getType(typeName);
 
-  // 3. Assert: {type} must exist, and must be an Input Object, Object or Interface type.
+  // 3. Assert: {type} must exist, and must be an Enum, Input Object, Object or Interface type.
   if (!type) {
     throw new Error(
       `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
     );
   }
   if (
+    !isEnumType(type) &&
     !isInputObjectType(type) &&
     !isObjectType(type) &&
     !isInterfaceType(type)
   ) {
     throw new Error(
-      `Expected ${inspect(typeName)} to be an Input Object, Object or Interface type.`,
+      `Expected ${inspect(typeName)} to be an Enum, Input Object, Object or Interface type.`,
     );
   }
 
-  // 4. If {type} is an Input Object type:
+  // 4. If {type} is an Enum type:
+  if (isEnumType(type)) {
+    // 1. Let {enumValueName} be the value of the second {Name}.
+    const enumValueName = schemaCoordinate.memberName.value;
+    const enumValue = type.getValue(enumValueName);
+
+    // 2. Return the enum value of {type} named {enumValueName}, or {null} if no such value exists.
+    if (enumValue == null) {
+      return;
+    }
+
+    return { kind: 'EnumValue', type, enumValue };
+  }
+
+  // 5. Otherwise, if {type} is an Input Object type:
   if (isInputObjectType(type)) {
     // 1. Let {inputFieldName} be the value of the second {Name}.
-    const inputFieldName = schemaCoordinate.fieldName.value;
+    const inputFieldName = schemaCoordinate.memberName.value;
     const inputField = type.getFields()[inputFieldName];
 
     // 2. Return the input field of {type} named {inputFieldName}, or {null} if no such input field exists.
@@ -160,10 +174,10 @@ function resolveFieldCoordinate(
     return { kind: 'InputField', type, inputField };
   }
 
-  // 5. Otherwise:
+  // 6. Otherwise:
   // 1. Let {fieldName} be the value of the second {Name}.
-  const fieldName = schemaCoordinate.fieldName.value;
-  const field = type.getFields()[fieldName];
+  const fieldName = schemaCoordinate.memberName.value;
+  const field = schema.getField(type, fieldName);
 
   // 2. Return the field of {type} named {fieldName}, or {null} if no such field exists.
   if (field == null) {
@@ -200,7 +214,7 @@ function resolveArgumentCoordinate(
   // 4. Let {fieldName} be the value of the second {Name}.
   // 5. Let {field} be the field of {type} named {fieldName}.
   const fieldName = schemaCoordinate.fieldName.value;
-  const field = type.getFields()[fieldName];
+  const field = schema.getField(type, fieldName);
 
   // 7. Assert: {field} must exist.
   if (field == null) {
@@ -221,40 +235,6 @@ function resolveArgumentCoordinate(
   }
 
   return { kind: 'FieldArgument', type, field, fieldArgument };
-}
-
-/**
- * ValueCoordinate : Name :: Name
- */
-function resolveValueCoordinate(
-  schema: GraphQLSchema,
-  schemaCoordinate: ValueCoordinateNode,
-): ResolvedEnumValue | undefined {
-  // 1. Let {typeName} be the value of the first {Name}.
-  // 2. Let {type} be the type in the {schema} named {typeName}.
-  const typeName = schemaCoordinate.name.value;
-  const type = schema.getType(typeName);
-
-  // 3. Assert: {type} must exist, and must be an Enum type.
-  if (!type) {
-    throw new Error(
-      `Expected ${inspect(typeName)} to be defined as a type in the schema.`,
-    );
-  }
-  if (!isEnumType(type)) {
-    throw new Error(`Expected ${inspect(typeName)} to be an Enum type.`);
-  }
-
-  // 4. Let {enumValueName} be the value of the second {Name}.
-  const enumValueName = schemaCoordinate.valueName.value;
-  const enumValue = type.getValue(enumValueName);
-
-  // 5. Return the enum value of {type} named {enumValueName}, or {null} if no such value exists.
-  if (enumValue == null) {
-    return;
-  }
-
-  return { kind: 'EnumValue', type, enumValue };
 }
 
 /**
@@ -321,12 +301,10 @@ export function resolveASTSchemaCoordinate(
   switch (schemaCoordinate.kind) {
     case Kind.TYPE_COORDINATE:
       return resolveTypeCoordinate(schema, schemaCoordinate);
-    case Kind.FIELD_COORDINATE:
-      return resolveFieldCoordinate(schema, schemaCoordinate);
+    case Kind.MEMBER_COORDINATE:
+      return resolveMemberCoordinate(schema, schemaCoordinate);
     case Kind.ARGUMENT_COORDINATE:
       return resolveArgumentCoordinate(schema, schemaCoordinate);
-    case Kind.VALUE_COORDINATE:
-      return resolveValueCoordinate(schema, schemaCoordinate);
     case Kind.DIRECTIVE_COORDINATE:
       return resolveDirectiveCoordinate(schema, schemaCoordinate);
     case Kind.DIRECTIVE_ARGUMENT_COORDINATE:

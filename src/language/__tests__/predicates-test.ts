@@ -148,9 +148,8 @@ describe('AST node predicates', () => {
       'ArgumentCoordinate',
       'DirectiveArgumentCoordinate',
       'DirectiveCoordinate',
-      'FieldCoordinate',
+      'MemberCoordinate',
       'TypeCoordinate',
-      'ValueCoordinate',
     ]);
   });
 });

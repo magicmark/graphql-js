@@ -13,7 +13,6 @@ export const TokenKind = {
   DOT: '.' as const,
   SPREAD: '...' as const,
   COLON: ':' as const,
-  TWO_COLON: '::' as const,
   EQUALS: '=' as const,
   AT: '@' as const,
   BRACKET_L: '[' as const,
