@@ -3,6 +3,7 @@ import { describe, it } from 'mocha';
 
 import type {
   GraphQLEnumType,
+  GraphQLField,
   GraphQLInputObjectType,
   GraphQLObjectType,
 } from '../../type/definition.js';
@@ -71,14 +72,8 @@ describe('resolveSchemaCoordinate', () => {
     );
 
     expect(() => resolveSchemaCoordinate(schema, 'String.field')).to.throw(
-      'Expected "String" to be an Input Object, Object or Interface type.',
+      'Expected "String" to be an Enum, Input Object, Object or Interface type.',
     );
-  });
-
-  it('does not resolve meta-fields', () => {
-    expect(
-      resolveSchemaCoordinate(schema, 'Business.__typename'),
-    ).to.deep.equal(undefined);
   });
 
   it('resolves a Input Field', () => {
@@ -101,7 +96,7 @@ describe('resolveSchemaCoordinate', () => {
     const type = schema.getType('SearchFilter') as GraphQLEnumType;
     const enumValue = type.getValue('OPEN_NOW');
     expect(
-      resolveSchemaCoordinate(schema, 'SearchFilter::OPEN_NOW'),
+      resolveSchemaCoordinate(schema, 'SearchFilter.OPEN_NOW'),
     ).to.deep.equal({
       kind: 'EnumValue',
       type,
@@ -109,7 +104,7 @@ describe('resolveSchemaCoordinate', () => {
     });
 
     expect(
-      resolveSchemaCoordinate(schema, 'SearchFilter::UNKNOWN'),
+      resolveSchemaCoordinate(schema, 'SearchFilter.UNKNOWN'),
     ).to.deep.equal(undefined);
   });
 
@@ -185,5 +180,60 @@ describe('resolveSchemaCoordinate', () => {
     expect(() => resolveSchemaCoordinate(schema, '@unknown(arg:)')).to.throw(
       'Expected "unknown" to be defined as a directive in the schema.',
     );
+  });
+
+  it('resolves a meta-field', () => {
+    const type = schema.getType('Business') as GraphQLObjectType;
+    const field = schema.getField(type, '__typename');
+    expect(
+      resolveSchemaCoordinate(schema, 'Business.__typename'),
+    ).to.deep.equal({
+      kind: 'Field',
+      type,
+      field,
+    });
+  });
+
+  it('resolves a meta-field argument', () => {
+    const type = schema.getType('Query') as GraphQLObjectType;
+    const field = schema.getField(type, '__type') as GraphQLField;
+    const fieldArgument = field.args.find((arg) => arg.name === 'name');
+    expect(
+      resolveSchemaCoordinate(schema, 'Query.__type(name:)'),
+    ).to.deep.equal({
+      kind: 'FieldArgument',
+      type,
+      field,
+      fieldArgument,
+    });
+  });
+
+  it('resolves an Introspection Type', () => {
+    expect(resolveSchemaCoordinate(schema, '__Type')).to.deep.equal({
+      kind: 'NamedType',
+      type: schema.getType('__Type'),
+    });
+  });
+
+  it('resolves an Introspection Type Field', () => {
+    const type = schema.getType('__Directive') as GraphQLObjectType;
+    const field = type.getFields().name;
+    expect(resolveSchemaCoordinate(schema, '__Directive.name')).to.deep.equal({
+      kind: 'Field',
+      type,
+      field,
+    });
+  });
+
+  it('resolves an Introspection Type Enum Value', () => {
+    const type = schema.getType('__DirectiveLocation') as GraphQLEnumType;
+    const enumValue = type.getValue('INLINE_FRAGMENT');
+    expect(
+      resolveSchemaCoordinate(schema, '__DirectiveLocation.INLINE_FRAGMENT'),
+    ).to.deep.equal({
+      kind: 'EnumValue',
+      type,
+      enumValue,
+    });
   });
 });

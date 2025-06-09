@@ -183,9 +183,8 @@ export type ASTNode =
   | EnumTypeExtensionNode
   | InputObjectTypeExtensionNode
   | TypeCoordinateNode
-  | FieldCoordinateNode
+  | MemberCoordinateNode
   | ArgumentCoordinateNode
-  | ValueCoordinateNode
   | DirectiveCoordinateNode
   | DirectiveArgumentCoordinateNode;
 
@@ -296,9 +295,8 @@ export const QueryDocumentKeys: {
 
   // Schema Coordinates
   TypeCoordinate: ['name'],
-  FieldCoordinate: ['name', 'fieldName'],
+  MemberCoordinate: ['name', 'memberName'],
   ArgumentCoordinate: ['name', 'fieldName', 'argumentName'],
-  ValueCoordinate: ['name', 'valueName'],
   DirectiveCoordinate: ['name'],
   DirectiveArgumentCoordinate: ['name', 'argumentName'],
 };
@@ -781,9 +779,8 @@ export interface InputObjectTypeExtensionNode {
 
 export type SchemaCoordinateNode =
   | TypeCoordinateNode
-  | FieldCoordinateNode
+  | MemberCoordinateNode
   | ArgumentCoordinateNode
-  | ValueCoordinateNode
   | DirectiveCoordinateNode
   | DirectiveArgumentCoordinateNode;
 
@@ -793,11 +790,11 @@ export interface TypeCoordinateNode {
   readonly name: NameNode;
 }
 
-export interface FieldCoordinateNode {
-  readonly kind: typeof Kind.FIELD_COORDINATE;
+export interface MemberCoordinateNode {
+  readonly kind: typeof Kind.MEMBER_COORDINATE;
   readonly loc?: Location;
   readonly name: NameNode;
-  readonly fieldName: NameNode;
+  readonly memberName: NameNode;
 }
 
 export interface ArgumentCoordinateNode {
@@ -806,13 +803,6 @@ export interface ArgumentCoordinateNode {
   readonly name: NameNode;
   readonly fieldName: NameNode;
   readonly argumentName: NameNode;
-}
-
-export interface ValueCoordinateNode {
-  readonly kind: typeof Kind.VALUE_COORDINATE;
-  readonly loc?: Location;
-  readonly name: NameNode;
-  readonly valueName: NameNode;
 }
 
 export interface DirectiveCoordinateNode {
