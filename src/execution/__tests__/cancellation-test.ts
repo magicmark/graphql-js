@@ -130,9 +130,19 @@ describe('Execute: Cancellation', () => {
       }
     `);
 
+    let aborted = false;
     const cancellableAsyncFn = async (abortSignal: AbortSignal) => {
+      if (abortSignal.aborted) {
+        aborted = true;
+      } else {
+        abortSignal.addEventListener('abort', () => {
+          aborted = true;
+        });
+      }
+      // We are in an async function so it gets cancelled and the field ends up
+      // resolving with the abort signal's error.
       await resolveOnNextTick();
-      abortSignal.throwIfAborted();
+      throw Error('some random other error that does not show up in response');
     };
 
     const resultPromise = execute({
@@ -141,8 +151,8 @@ describe('Execute: Cancellation', () => {
       abortSignal: abortController.signal,
       rootValue: {
         todo: {
-          id: (_args: any, _context: any, _info: any, signal: AbortSignal) =>
-            cancellableAsyncFn(signal),
+          id: (_args: any, _context: any, info: { abortSignal: AbortSignal }) =>
+            cancellableAsyncFn(info.abortSignal),
         },
       },
     });
@@ -165,6 +175,8 @@ describe('Execute: Cancellation', () => {
         },
       ],
     });
+
+    expect(aborted).to.equal(true);
   });
 
   it('should stop the execution when aborted during object field completion with a custom error', async () => {
