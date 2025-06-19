@@ -28,6 +28,8 @@ overrides:
       - codegen
       - composability
       - deduplication
+      - Vitest
+      - hardcoding
       - debuggable
       - subschema
       - subschemas

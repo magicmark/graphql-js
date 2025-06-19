@@ -36,6 +36,15 @@ const meta = {
   'resolver-anatomy': '',
   'graphql-errors': '',
   'using-directives': '',
+  '-- 3': {
+    type: 'separator',
+    title: 'Testing',
+  },
+  'testing-graphql-servers': '',
+  'testing-approaches': '',
+  'testing-operations': '',
+  'testing-resolvers': '',
+  'testing-best-practices': '',
   'authorization-strategies': '',
   '-- 4': {
     type: 'separator',
