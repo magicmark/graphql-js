@@ -203,9 +203,9 @@ export function parseSchemaCoordinate(
 ): SchemaCoordinateNode {
   const parser = new Parser(source, options);
   parser.expectToken(TokenKind.SOF);
-  const type = parser.parseSchemaCoordinate();
+  const coordinate = parser.parseSchemaCoordinate();
   parser.expectToken(TokenKind.EOF);
-  return type;
+  return coordinate;
 }
 
 /**
