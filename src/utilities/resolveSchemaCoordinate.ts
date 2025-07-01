@@ -109,7 +109,7 @@ function resolveTypeCoordinate(
   const typeName = schemaCoordinate.name.value;
   const type = schema.getType(typeName);
 
-  // 2. Return the type in the {schema} named {typeName}, or {null} if no such type exists.
+  // 2. Return the type in the {schema} named {typeName} if it exists.
   if (type == null) {
     return;
   }
@@ -152,7 +152,7 @@ function resolveMemberCoordinate(
     const enumValueName = schemaCoordinate.memberName.value;
     const enumValue = type.getValue(enumValueName);
 
-    // 2. Return the enum value of {type} named {enumValueName}, or {null} if no such value exists.
+    // 2. Return the enum value of {type} named {enumValueName} if it exists.
     if (enumValue == null) {
       return;
     }
@@ -166,7 +166,7 @@ function resolveMemberCoordinate(
     const inputFieldName = schemaCoordinate.memberName.value;
     const inputField = type.getFields()[inputFieldName];
 
-    // 2. Return the input field of {type} named {inputFieldName}, or {null} if no such input field exists.
+    // 2. Return the input field of {type} named {inputFieldName} if it exists.
     if (inputField == null) {
       return;
     }
@@ -179,7 +179,7 @@ function resolveMemberCoordinate(
   const fieldName = schemaCoordinate.memberName.value;
   const field = schema.getField(type, fieldName);
 
-  // 2. Return the field of {type} named {fieldName}, or {null} if no such field exists.
+  // 2. Return the field of {type} named {fieldName} if it exists.
   if (field == null) {
     return;
   }
@@ -229,7 +229,7 @@ function resolveArgumentCoordinate(
     (arg) => arg.name === fieldArgumentName,
   );
 
-  // 8. Return the argument of {field} named {fieldArgumentName}, or {null} if no such argument exists.
+  // 8. Return the argument of {field} named {fieldArgumentName} if it exists.
   if (fieldArgument == null) {
     return;
   }
@@ -248,7 +248,7 @@ function resolveDirectiveCoordinate(
   const directiveName = schemaCoordinate.name.value;
   const directive = schema.getDirective(directiveName);
 
-  // 2. Return the directive in the {schema} named {directiveName}, or {null} if no such directive exists.
+  // 2. Return the directive in the {schema} named {directiveName} if it exists.
   if (!directive) {
     return;
   }
@@ -283,7 +283,7 @@ function resolveDirectiveArgumentCoordinate(
     (arg) => arg.name === directiveArgumentName,
   );
 
-  // 5. Return the argument of {directive} named {directiveArgumentName}, or {null} if no such argument exists.
+  // 5. Return the argument of {directive} named {directiveArgumentName} if it exists.
   if (!directiveArgument) {
     return;
   }
