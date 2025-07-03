@@ -1,0 +1,48 @@
+const meta = {
+  index: '',
+  '-- 1': {
+    type: 'separator',
+    title: 'Getting Started',
+  },
+  'getting-started': '',
+  'running-an-express-graphql-server': '',
+  'graphql-clients': '',
+  'authentication-and-express-middleware': '',
+  '-- 2': {
+    type: 'separator',
+    title: 'Core Concepts',
+  },
+  'basic-types': '',
+  'passing-arguments': '',
+  'object-types': '',
+  'mutations-and-input-types': '',
+  nullability: '',
+  'abstract-types': '',
+  'custom-scalars': '',
+  '-- 3': {
+    type: 'separator',
+    title: 'Advanced Guides',
+  },
+  'constructing-types': '',
+  'oneof-input-objects': '',
+  'defer-stream': '',
+  subscriptions: '',
+  'type-generation': '',
+  'cursor-based-pagination': '',
+  'advanced-custom-scalars': '',
+  'operation-complexity-controls': '',
+  'n1-dataloader': '',
+  'caching-strategies': '',
+  'resolver-anatomy': '',
+  'graphql-errors': '',
+  'using-directives': '',
+  'authorization-strategies': '',
+  '-- 4': {
+    type: 'separator',
+    title: 'Production & Scaling',
+  },
+  'going-to-production': '',
+  'scaling-graphql': '',
+};
+
+export default meta;

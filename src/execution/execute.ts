@@ -85,7 +85,6 @@ import type {
 import { DeferredFragmentRecord } from './types.js';
 import type { VariableValues } from './values.js';
 import {
-  experimentalGetArgumentValues,
   getArgumentValues,
   getDirectiveValues,
   getVariableValues,
@@ -200,6 +199,11 @@ export interface ExecutionArgs {
   enableEarlyExecution?: Maybe<boolean>;
   hideSuggestions?: Maybe<boolean>;
   abortSignal?: Maybe<AbortSignal>;
+  /** Additional execution options. */
+  options?: {
+    /** Set the maximum number of errors allowed for coercing (defaults to 50). */
+    maxCoercionErrors?: number;
+  };
 }
 
 export interface StreamUsage {
@@ -473,6 +477,7 @@ export function validateExecutionArgs(
     perEventExecutor,
     enableEarlyExecution,
     abortSignal,
+    options,
   } = args;
 
   if (abortSignal?.aborted) {
@@ -535,7 +540,7 @@ export function validateExecutionArgs(
     variableDefinitions,
     rawVariableValues ?? {},
     {
-      maxErrors: 50,
+      maxErrors: options?.maxCoercionErrors ?? 50,
       hideSuggestions,
     },
   );
@@ -870,6 +875,7 @@ function executeField(
     toNodes(fieldDetailsList),
     parentType,
     path,
+    abortSignal,
   );
 
   // Get the resolve function, regardless of if its result is normal or abrupt (error).
@@ -877,9 +883,9 @@ function executeField(
     // Build a JS object of arguments from the field.arguments AST, using the
     // variables scope to fulfill any variable references.
     // TODO: find a way to memoize, in case this field is within a List type.
-    const args = experimentalGetArgumentValues(
+    const args = getArgumentValues(
+      fieldDef,
       fieldDetailsList[0].node,
-      fieldDef.args,
       variableValues,
       fieldDetailsList[0].fragmentVariableValues,
       hideSuggestions,
@@ -888,7 +894,7 @@ function executeField(
     // The resolve function's optional third argument is a context value that
     // is provided to every resolve function within an execution. It is commonly
     // used to represent an authenticated user, or request-specific caches.
-    const result = resolveFn(source, args, contextValue, info, abortSignal);
+    const result = resolveFn(source, args, contextValue, info);
 
     if (isPromise(result)) {
       return completePromisedValue(
@@ -955,6 +961,7 @@ export function buildResolveInfo(
   fieldNodes: ReadonlyArray<FieldNode>,
   parentType: GraphQLObjectType,
   path: Path,
+  abortSignal: AbortSignal | undefined,
 ): GraphQLResolveInfo {
   const { schema, fragmentDefinitions, rootValue, operation, variableValues } =
     validatedExecutionArgs;
@@ -971,6 +978,7 @@ export function buildResolveInfo(
     rootValue,
     operation,
     variableValues,
+    abortSignal,
   };
 }
 
@@ -2043,12 +2051,14 @@ export const defaultTypeResolver: GraphQLTypeResolver<unknown, unknown> =
         if (isPromise(isTypeOfResult)) {
           promisedIsTypeOfResults[i] = isTypeOfResult;
         } else if (isTypeOfResult) {
-          if (promisedIsTypeOfResults.length > 0) {
-            Promise.all(promisedIsTypeOfResults).then(undefined, () => {
-              /* ignore errors */
-            });
+          if (promisedIsTypeOfResults.length) {
+            // Explicitly ignore any promise rejections
+            Promise.allSettled(promisedIsTypeOfResults)
+              /* c8 ignore next 3 */
+              .catch(() => {
+                // Do nothing
+              });
           }
-
           return type.name;
         }
       }
@@ -2072,12 +2082,12 @@ export const defaultTypeResolver: GraphQLTypeResolver<unknown, unknown> =
  * of calling that function while passing along args and context value.
  */
 export const defaultFieldResolver: GraphQLFieldResolver<unknown, unknown> =
-  function (source: any, args, contextValue, info, abortSignal) {
+  function (source: any, args, contextValue, info) {
     // ensure source is a value for which property access is acceptable.
     if (isObjectLike(source) || typeof source === 'function') {
       const property = source[info.fieldName];
       if (typeof property === 'function') {
-        return source[info.fieldName](args, contextValue, info, abortSignal);
+        return source[info.fieldName](args, contextValue, info);
       }
       return property;
     }
@@ -2286,6 +2296,7 @@ function executeSubscription(
     fieldNodes,
     rootType,
     path,
+    abortSignal,
   );
 
   try {
@@ -2298,6 +2309,7 @@ function executeSubscription(
       fieldDef,
       fieldNodes[0],
       variableValues,
+      fieldDetailsList[0].fragmentVariableValues,
       hideSuggestions,
     );
 
@@ -2309,7 +2321,7 @@ function executeSubscription(
     // The resolve function's optional third argument is a context value that
     // is provided to every resolve function within an execution. It is commonly
     // used to represent an authenticated user, or request-specific caches.
-    const result = resolveFn(rootValue, args, contextValue, info, abortSignal);
+    const result = resolveFn(rootValue, args, contextValue, info);
 
     if (isPromise(result)) {
       const abortSignalListener = abortSignal
