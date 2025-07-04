@@ -2,6 +2,8 @@
 title: Basic Types
 ---
 
+# Basic Types
+
 import { Tabs } from 'nextra/components';
 
 In most situations, all you need to do is to specify the types for your API using the GraphQL schema language, taken as an argument to the `buildSchema` function.
@@ -17,9 +19,9 @@ Each of these types maps straightforwardly to JavaScript, so you can just return
 <Tabs items={['SDL', 'Code']}>
   <Tabs.Tab>
 ```js
-const express = require('express');
-const { createHandler } = require('graphql-http/lib/use/express');
-const { buildSchema } = require('graphql');
+import express from 'express';
+import { createHandler } from 'graphql-http/lib/use/express';
+import { buildSchema } from 'graphql';
 
 // Construct a schema, using GraphQL schema language
 const schema = buildSchema(`
@@ -39,7 +41,7 @@ const root = {
     return Math.random();
   },
   rollThreeDice() {
-    return [1, 2, 3].map((\_) => 1 + Math.floor(Math.random() \* 6));
+    return [1, 2, 3].map((_) => 1 + Math.floor(Math.random() * 6));
   },
 };
 
@@ -54,62 +56,56 @@ app.all(
 app.listen(4000);
 console.log('Running a GraphQL API server at localhost:4000/graphql');
 
-````
+```
   </Tabs.Tab>
   <Tabs.Tab>
 ```js
-const express = require('express');
-const { createHandler } = require('graphql-http/lib/use/express');
-const {
+import express from 'express';
+import { createHandler } from 'graphql-http/lib/use/express';
+import {
   GraphQLObjectType,
   GraphQLSchema,
   GraphQLString,
   GraphQLFloat,
   GraphQLList,
-} = require('graphql');
+} from 'graphql';
 
 // Construct a schema
 const schema = new GraphQLSchema({
   query: new GraphQLObjectType({
     name: 'Query',
     fields: {
-      quoteOfTheDay: { type: GraphQLString },
-      random: { type: GraphQLFloat },
-      rollThreeDice: { type: new GraphQLList(GraphQLFloat) },
+      quoteOfTheDay: { 
+        type: GraphQLString,
+        resolve: () => Math.random() < 0.5 ? 'Take it easy' : 'Salvation lies within'
+      },
+      random: { 
+        type: GraphQLFloat,
+        resolve: () => Math.random()
+      },
+      rollThreeDice: { 
+        type: new GraphQLList(GraphQLFloat),
+        resolve: () => [1, 2, 3].map((_) => 1 + Math.floor(Math.random() * 6))
+      },
     },
   }),
 });
 
-// The root provides a resolver function for each API endpoint
-const root = {
-  quoteOfTheDay() {
-    return Math.random() < 0.5 ? 'Take it easy' : 'Salvation lies within';
-  },
-  random() {
-    return Math.random();
-  },
-  rollThreeDice() {
-    return [1, 2, 3].map((_) => 1 + Math.floor(Math.random() * 6));
-  },
-};
-
 const app = express();
-
 app.all(
   '/graphql',
   createHandler({
     schema: schema,
-    rootValue: root,
   }),
 );
 
 app.listen(4000);
 console.log('Running a GraphQL API server at localhost:4000/graphql');
-````
 
+```
   </Tabs.Tab>
 </Tabs>
 
 If you run this code with `node server.js` and browse to http://localhost:4000/graphql you can try out these APIs.
 
-These examples show you how to call APIs that return different types. To send different types of data into an API, you will also need to learn about [passing arguments to a GraphQL API](/passing-arguments/).
+These examples show you how to call APIs that return different types. To send different types of data into an API, you will also need to learn about [passing arguments to a GraphQL API](./passing-arguments).
