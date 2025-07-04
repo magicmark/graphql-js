@@ -70,6 +70,7 @@ import type {
 import { Location, OperationTypeNode } from './ast.js';
 import { DirectiveLocation } from './directiveLocation.js';
 import { Kind } from './kinds.js';
+import type { LexerOptions } from './lexer.js';
 import { isPunctuatorTokenKind, Lexer } from './lexer.js';
 import { isSource, Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
@@ -78,6 +79,14 @@ import { TokenKind } from './tokenKind.js';
  * Configuration options to control parser behavior
  */
 export interface ParseOptions {
+  /**
+   * By default, ignored tokens are valid syntax and ignored when lexing.
+   * This may be disabled for certain grammars that specifically disallow
+   * ignored tokens (e.g. schema coordinates).
+   * This is passed down to the lexer to enforce.
+   */
+  noIgnoredTokens?: boolean | undefined;
+
   /**
    * By default, the parser creates AST nodes that know the location
    * in the source that they correspond to. This configuration flag
@@ -199,9 +208,12 @@ export function parseType(
  */
 export function parseSchemaCoordinate(
   source: string | Source,
-  options?: ParseOptions,
+  options: ParseOptions & { noIgnoredTokens?: true } = {},
 ): SchemaCoordinateNode {
-  const parser = new Parser(source, options);
+  // Ignored tokens are excluded syntax for the schema coordinates.
+  const _options = { ...options, noIgnoredTokens: true };
+
+  const parser = new Parser(source, _options);
   parser.expectToken(TokenKind.SOF);
   const coordinate = parser.parseSchemaCoordinate();
   parser.expectToken(TokenKind.EOF);
@@ -227,7 +239,11 @@ export class Parser {
   constructor(source: string | Source, options: ParseOptions = {}) {
     const sourceObj = isSource(source) ? source : new Source(source);
 
-    this._lexer = new Lexer(sourceObj);
+    const lexerOptions: LexerOptions = {
+      noIgnoredTokens: options.noIgnoredTokens ?? false,
+    };
+
+    this._lexer = new Lexer(sourceObj, lexerOptions);
     this._options = options;
     this._tokenCounter = 0;
   }

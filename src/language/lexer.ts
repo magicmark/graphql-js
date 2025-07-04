@@ -7,6 +7,18 @@ import type { Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
 
 /**
+ * Configuration options to control lexer behavior
+ */
+export interface LexerOptions {
+  /**
+   * By default, ignored tokens are valid syntax and ignored when lexing.
+   * This may be disabled for certain grammars that specifically disallow
+   * ignored tokens (e.g. schema coordinates).
+   */
+  noIgnoredTokens?: boolean | undefined;
+}
+
+/**
  * Given a Source object, creates a Lexer for that source.
  * A Lexer is a stateful stream generator in that every time
  * it is advanced, it returns the next token in the Source. Assuming the
@@ -37,7 +49,9 @@ export class Lexer {
    */
   lineStart: number;
 
-  constructor(source: Source) {
+  protected _options: LexerOptions;
+
+  constructor(source: Source, options: LexerOptions = {}) {
     const startOfFileToken = new Token(TokenKind.SOF, 0, 0, 0, 0);
 
     this.source = source;
@@ -45,6 +59,7 @@ export class Lexer {
     this.token = startOfFileToken;
     this.line = 1;
     this.lineStart = 0;
+    this._options = options;
   }
 
   get [Symbol.toStringTag]() {
@@ -82,6 +97,16 @@ export class Lexer {
       } while (token.kind === TokenKind.COMMENT);
     }
     return token;
+  }
+
+  validateIgnoredToken(position: number): void {
+    if (this._options.noIgnoredTokens === true) {
+      throw syntaxError(
+        this.source,
+        position,
+        `Invalid character: ${printCodePointAt(this, position)}.`,
+      );
+    }
   }
 }
 
@@ -217,6 +242,7 @@ function readNextToken(lexer: Lexer, start: number): Token {
       case 0x0009: // \t
       case 0x0020: // <space>
       case 0x002c: // ,
+        lexer.validateIgnoredToken(position);
         ++position;
         continue;
       // LineTerminator ::
@@ -224,11 +250,13 @@ function readNextToken(lexer: Lexer, start: number): Token {
       //   - "Carriage Return (U+000D)" [lookahead != "New Line (U+000A)"]
       //   - "Carriage Return (U+000D)" "New Line (U+000A)"
       case 0x000a: // \n
+        lexer.validateIgnoredToken(position);
         ++position;
         ++lexer.line;
         lexer.lineStart = position;
         continue;
       case 0x000d: // \r
+        lexer.validateIgnoredToken(position);
         if (body.charCodeAt(position + 1) === 0x000a) {
           position += 2;
         } else {
@@ -239,6 +267,7 @@ function readNextToken(lexer: Lexer, start: number): Token {
         continue;
       // Comment
       case 0x0023: // #
+        lexer.validateIgnoredToken(position);
         return readComment(lexer, position);
       // Token ::
       //   - Punctuator
