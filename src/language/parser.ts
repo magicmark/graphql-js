@@ -70,8 +70,11 @@ import type {
 import { Location, OperationTypeNode } from './ast.js';
 import { DirectiveLocation } from './directiveLocation.js';
 import { Kind } from './kinds.js';
-import type { LexerOptions } from './lexer.js';
-import { isPunctuatorTokenKind, Lexer } from './lexer.js';
+import {
+  isPunctuatorTokenKind,
+  Lexer,
+  SchemaCoordinateLexer,
+} from './lexer.js';
 import { isSource, Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
 
@@ -79,14 +82,6 @@ import { TokenKind } from './tokenKind.js';
  * Configuration options to control parser behavior
  */
 export interface ParseOptions {
-  /**
-   * By default, ignored tokens are valid syntax and ignored when lexing.
-   * This may be disabled for certain grammars that specifically disallow
-   * ignored tokens (e.g. schema coordinates).
-   * This is passed down to the lexer to enforce.
-   */
-  noIgnoredTokens?: boolean | undefined;
-
   /**
    * By default, the parser creates AST nodes that know the location
    * in the source that they correspond to. This configuration flag
@@ -123,6 +118,24 @@ export interface ParseOptions {
    * ```
    */
   experimentalFragmentArguments?: boolean | undefined;
+
+  /**
+   * You may override the Lexer class used to lex the source; this is used by
+   * schema coordinates to introduce a lexer that forbids ignored tokens.
+   */
+  Lexer?: typeof Lexer | undefined;
+}
+
+/**
+ * Configuration options to control schema coordinate parser behavior
+ */
+export interface ParseSchemaCoordinateOptions {
+  /**
+   * By default, the parser creates AST nodes that know the location
+   * in the source that they correspond to. This configuration flag
+   * disables that behavior for performance or testing.
+   */
+  noLocation?: boolean | undefined;
 }
 
 /**
@@ -208,11 +221,10 @@ export function parseType(
  */
 export function parseSchemaCoordinate(
   source: string | Source,
-  options: ParseOptions & { noIgnoredTokens?: true } = {},
+  options?: ParseSchemaCoordinateOptions,
 ): SchemaCoordinateNode {
   // Ignored tokens are excluded syntax for the schema coordinates.
-  const _options = { ...options, noIgnoredTokens: true };
-
+  const _options = { ...options, Lexer: SchemaCoordinateLexer };
   const parser = new Parser(source, _options);
   parser.expectToken(TokenKind.SOF);
   const coordinate = parser.parseSchemaCoordinate();
@@ -239,11 +251,8 @@ export class Parser {
   constructor(source: string | Source, options: ParseOptions = {}) {
     const sourceObj = isSource(source) ? source : new Source(source);
 
-    const lexerOptions: LexerOptions = {
-      noIgnoredTokens: options.noIgnoredTokens ?? false,
-    };
-
-    this._lexer = new Lexer(sourceObj, lexerOptions);
+    const LexerClass = options.Lexer ?? Lexer;
+    this._lexer = new LexerClass(sourceObj);
     this._options = options;
     this._tokenCounter = 0;
   }

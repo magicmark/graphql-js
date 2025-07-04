@@ -7,18 +7,6 @@ import type { Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
 
 /**
- * Configuration options to control lexer behavior
- */
-export interface LexerOptions {
-  /**
-   * By default, ignored tokens are valid syntax and ignored when lexing.
-   * This may be disabled for certain grammars that specifically disallow
-   * ignored tokens (e.g. schema coordinates).
-   */
-  noIgnoredTokens?: boolean | undefined;
-}
-
-/**
  * Given a Source object, creates a Lexer for that source.
  * A Lexer is a stateful stream generator in that every time
  * it is advanced, it returns the next token in the Source. Assuming the
@@ -49,9 +37,7 @@ export class Lexer {
    */
   lineStart: number;
 
-  protected _options: LexerOptions;
-
-  constructor(source: Source, options: LexerOptions = {}) {
+  constructor(source: Source) {
     const startOfFileToken = new Token(TokenKind.SOF, 0, 0, 0, 0);
 
     this.source = source;
@@ -59,7 +45,6 @@ export class Lexer {
     this.token = startOfFileToken;
     this.line = 1;
     this.lineStart = 0;
-    this._options = options;
   }
 
   get [Symbol.toStringTag]() {
@@ -99,14 +84,25 @@ export class Lexer {
     return token;
   }
 
-  validateIgnoredToken(position: number): void {
-    if (this._options.noIgnoredTokens === true) {
-      throw syntaxError(
-        this.source,
-        position,
-        `Invalid character: ${printCodePointAt(this, position)}.`,
-      );
-    }
+  validateIgnoredToken(_position: number): void {
+    /* noop - ignored tokens are ignored */
+  }
+}
+
+/**
+ * As `Lexer`, but forbids ignored tokens as required of schema coordinates.
+ */
+export class SchemaCoordinateLexer extends Lexer {
+  override get [Symbol.toStringTag]() {
+    return 'SchemaCoordinateLexer';
+  }
+
+  override validateIgnoredToken(position: number): void {
+    throw syntaxError(
+      this.source,
+      position,
+      `Invalid character: ${printCodePointAt(this, position)}.`,
+    );
   }
 }
 
