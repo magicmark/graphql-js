@@ -751,11 +751,11 @@ describe('Parser', () => {
     });
 
     it('rejects Name . Name ( Name : Name )', () => {
-      expect(() => parseSchemaCoordinate('MyType.field(arg: value)'))
+      expect(() => parseSchemaCoordinate('MyType.field(arg:value)'))
         .to.throw()
         .to.deep.include({
           message: 'Syntax Error: Expected ")", found Name "value".',
-          locations: [{ line: 1, column: 19 }],
+          locations: [{ line: 1, column: 18 }],
         });
     });
 

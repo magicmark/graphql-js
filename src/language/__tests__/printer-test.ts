@@ -301,16 +301,24 @@ describe('Printer: Query document', () => {
   });
 
   it('prints schema coordinates', () => {
-    expect(print(parseSchemaCoordinate('  Name  '))).to.equal('Name');
-    expect(print(parseSchemaCoordinate('  Name . field '))).to.equal(
-      'Name.field',
-    );
-    expect(print(parseSchemaCoordinate('  Name . field ( arg: )'))).to.equal(
+    expect(print(parseSchemaCoordinate('Name'))).to.equal('Name');
+    expect(print(parseSchemaCoordinate('Name.field'))).to.equal('Name.field');
+    expect(print(parseSchemaCoordinate('Name.field(arg:)'))).to.equal(
       'Name.field(arg:)',
     );
-    expect(print(parseSchemaCoordinate(' @ name  '))).to.equal('@name');
-    expect(print(parseSchemaCoordinate(' @ name (arg:) '))).to.equal(
-      '@name(arg:)',
+    expect(print(parseSchemaCoordinate('@name'))).to.equal('@name');
+    expect(print(parseSchemaCoordinate('@name(arg:)'))).to.equal('@name(arg:)');
+  });
+
+  it('throws syntax error for ignored tokens in schema coordinates', () => {
+    expect(() => print(parseSchemaCoordinate('# foo\nName'))).to.throw(
+      'Syntax Error: Invalid character: "#"',
+    );
+    expect(() => print(parseSchemaCoordinate('\nName'))).to.throw(
+      'Syntax Error: Invalid character: U+000A.',
+    );
+    expect(() => print(parseSchemaCoordinate('Name .field'))).to.throw(
+      'Syntax Error: Invalid character: " "',
     );
   });
 });

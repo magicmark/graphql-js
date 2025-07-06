@@ -83,6 +83,27 @@ export class Lexer {
     }
     return token;
   }
+
+  validateIgnoredToken(_position: number): void {
+    /* noop - ignored tokens are ignored */
+  }
+}
+
+/**
+ * As `Lexer`, but forbids ignored tokens as required of schema coordinates.
+ */
+export class SchemaCoordinateLexer extends Lexer {
+  override get [Symbol.toStringTag]() {
+    return 'SchemaCoordinateLexer';
+  }
+
+  override validateIgnoredToken(position: number): void {
+    throw syntaxError(
+      this.source,
+      position,
+      `Invalid character: ${printCodePointAt(this, position)}.`,
+    );
+  }
 }
 
 /**
@@ -217,6 +238,7 @@ function readNextToken(lexer: Lexer, start: number): Token {
       case 0x0009: // \t
       case 0x0020: // <space>
       case 0x002c: // ,
+        lexer.validateIgnoredToken(position);
         ++position;
         continue;
       // LineTerminator ::
@@ -224,11 +246,13 @@ function readNextToken(lexer: Lexer, start: number): Token {
       //   - "Carriage Return (U+000D)" [lookahead != "New Line (U+000A)"]
       //   - "Carriage Return (U+000D)" "New Line (U+000A)"
       case 0x000a: // \n
+        lexer.validateIgnoredToken(position);
         ++position;
         ++lexer.line;
         lexer.lineStart = position;
         continue;
       case 0x000d: // \r
+        lexer.validateIgnoredToken(position);
         if (body.charCodeAt(position + 1) === 0x000a) {
           position += 2;
         } else {
@@ -239,6 +263,7 @@ function readNextToken(lexer: Lexer, start: number): Token {
         continue;
       // Comment
       case 0x0023: // #
+        lexer.validateIgnoredToken(position);
         return readComment(lexer, position);
       // Token ::
       //   - Punctuator
