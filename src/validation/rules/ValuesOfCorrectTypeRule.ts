@@ -82,13 +82,7 @@ export function ValuesOfCorrectTypeRule(
       }
 
       if (type.isOneOf) {
-        validateOneOfInputObject(
-          context,
-          node,
-          type,
-          fieldNodeMap,
-          variableDefinitions,
-        );
+        validateOneOfInputObject(context, node, type, fieldNodeMap);
       }
     },
     ObjectField(node) {
@@ -185,7 +179,6 @@ function validateOneOfInputObject(
   node: ObjectValueNode,
   type: GraphQLInputObjectType,
   fieldNodeMap: ObjMap<ObjectFieldNode>,
-  variableDefinitions: { [key: string]: VariableDefinitionNode },
 ): void {
   const keys = Object.keys(fieldNodeMap);
   const isNotExactlyOneField = keys.length !== 1;
@@ -202,7 +195,6 @@ function validateOneOfInputObject(
 
   const value = fieldNodeMap[keys[0]]?.value;
   const isNullLiteral = !value || value.kind === Kind.NULL;
-  const isVariable = value?.kind === Kind.VARIABLE;
 
   if (isNullLiteral) {
     context.reportError(
@@ -210,21 +202,5 @@ function validateOneOfInputObject(
         nodes: [node],
       }),
     );
-    return;
-  }
-
-  if (isVariable) {
-    const variableName = value.name.value;
-    const definition = variableDefinitions[variableName];
-    const isNullableVariable = definition.type.kind !== Kind.NON_NULL_TYPE;
-
-    if (isNullableVariable) {
-      context.reportError(
-        new GraphQLError(
-          `Variable "${variableName}" must be non-nullable to be used for OneOf Input Object "${type.name}".`,
-          { nodes: [node] },
-        ),
-      );
-    }
   }
 }
