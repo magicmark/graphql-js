@@ -70,11 +70,7 @@ import type {
 import { Location, OperationTypeNode } from './ast.js';
 import { DirectiveLocation } from './directiveLocation.js';
 import { Kind } from './kinds.js';
-import {
-  isPunctuatorTokenKind,
-  Lexer,
-  SchemaCoordinateLexer,
-} from './lexer.js';
+import { isPunctuatorTokenKind, Lexer } from './lexer.js';
 import { isSource, Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
 
@@ -118,24 +114,6 @@ export interface ParseOptions {
    * ```
    */
   experimentalFragmentArguments?: boolean | undefined;
-
-  /**
-   * You may override the Lexer class used to lex the source; this is used by
-   * schema coordinates to introduce a lexer that forbids ignored tokens.
-   */
-  Lexer?: typeof Lexer | undefined;
-}
-
-/**
- * Configuration options to control schema coordinate parser behavior
- */
-export interface ParseSchemaCoordinateOptions {
-  /**
-   * By default, the parser creates AST nodes that know the location
-   * in the source that they correspond to. This configuration flag
-   * disables that behavior for performance or testing.
-   */
-  noLocation?: boolean | undefined;
 }
 
 /**
@@ -221,13 +199,9 @@ export function parseType(
  */
 export function parseSchemaCoordinate(
   source: string | Source,
-  options?: ParseSchemaCoordinateOptions,
+  options?: ParseOptions,
 ): SchemaCoordinateNode {
-  // Ignored tokens are excluded syntax for a Schema Coordinate.
-  const parser = new Parser(source, {
-    ...options,
-    Lexer: SchemaCoordinateLexer,
-  });
+  const parser = new Parser(source, options);
   parser.expectToken(TokenKind.SOF);
   const coordinate = parser.parseSchemaCoordinate();
   parser.expectToken(TokenKind.EOF);
@@ -253,8 +227,7 @@ export class Parser {
   constructor(source: string | Source, options: ParseOptions = {}) {
     const sourceObj = isSource(source) ? source : new Source(source);
 
-    const LexerClass = options.Lexer ?? Lexer;
-    this._lexer = new LexerClass(sourceObj);
+    this._lexer = new Lexer(sourceObj);
     this._options = options;
     this._tokenCounter = 0;
   }
