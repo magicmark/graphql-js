@@ -70,7 +70,9 @@ import type {
 import { Location, OperationTypeNode } from './ast.js';
 import { DirectiveLocation } from './directiveLocation.js';
 import { Kind } from './kinds.js';
+import type { LexerInterface } from './lexer.js';
 import { isPunctuatorTokenKind, Lexer } from './lexer.js';
+import { SchemaCoordinateLexer } from './schemaCoordinateLexer.js';
 import { isSource, Source } from './source.js';
 import { TokenKind } from './tokenKind.js';
 
@@ -114,6 +116,12 @@ export interface ParseOptions {
    * ```
    */
   experimentalFragmentArguments?: boolean | undefined;
+
+  /**
+   * You may override the Lexer class used to lex the source; this is used by
+   * schema coordinates to introduce a lexer with a resticted syntax.
+   */
+  lexer?: LexerInterface | undefined;
 }
 
 /**
@@ -199,9 +207,10 @@ export function parseType(
  */
 export function parseSchemaCoordinate(
   source: string | Source,
-  options?: ParseOptions,
 ): SchemaCoordinateNode {
-  const parser = new Parser(source, options);
+  const sourceObj = isSource(source) ? source : new Source(source);
+  const lexer = new SchemaCoordinateLexer(sourceObj);
+  const parser = new Parser(source, { lexer });
   parser.expectToken(TokenKind.SOF);
   const coordinate = parser.parseSchemaCoordinate();
   parser.expectToken(TokenKind.EOF);
@@ -220,15 +229,21 @@ export function parseSchemaCoordinate(
  * @internal
  */
 export class Parser {
-  protected _options: ParseOptions;
-  protected _lexer: Lexer;
+  protected _options: Omit<ParseOptions, 'lexer'>;
+  protected _lexer: LexerInterface;
   protected _tokenCounter: number;
 
   constructor(source: string | Source, options: ParseOptions = {}) {
-    const sourceObj = isSource(source) ? source : new Source(source);
+    const { lexer, ..._options } = options;
 
-    this._lexer = new Lexer(sourceObj);
-    this._options = options;
+    if (lexer) {
+      this._lexer = lexer;
+    } else {
+      const sourceObj = isSource(source) ? source : new Source(source);
+      this._lexer = new Lexer(sourceObj);
+    }
+
+    this._options = _options;
     this._tokenCounter = 0;
   }
 
