@@ -30,6 +30,24 @@ describe('SchemaCoordinateLexer', () => {
     );
   });
 
+  it('tracks a schema coordinate', () => {
+    const lexer = new SchemaCoordinateLexer(new Source('Name.field'));
+    expect(lexer.advance()).to.contain({
+      kind: TokenKind.NAME,
+      start: 0,
+      end: 4,
+      value: 'Name',
+    });
+  });
+
+  it('forbids ignored tokens', () => {
+    const lexer = new SchemaCoordinateLexer(new Source('\nName.field'));
+    expectToThrowJSON(() => lexer.advance()).to.deep.equal({
+      message: 'Syntax Error: Invalid character: U+000A.',
+      locations: [{ line: 1, column: 1 }],
+    });
+  });
+
   it('ignores BOM header', () => {
     expect(lexOne('\uFEFFfoo')).to.contain({
       kind: TokenKind.NAME,
