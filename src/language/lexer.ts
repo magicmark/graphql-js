@@ -62,7 +62,7 @@ export class Lexer {
 
   /**
    * Looks ahead and returns the next non-ignored token, but does not change
-   * the current Lexer token.
+   * the state of Lexer.
    */
   lookahead(): Token {
     let token = this.token;
@@ -95,7 +95,6 @@ export function isPunctuatorTokenKind(kind: TokenKind): boolean {
     kind === TokenKind.AMP ||
     kind === TokenKind.PAREN_L ||
     kind === TokenKind.PAREN_R ||
-    kind === TokenKind.DOT ||
     kind === TokenKind.SPREAD ||
     kind === TokenKind.COLON ||
     kind === TokenKind.EQUALS ||
@@ -151,8 +150,10 @@ function isTrailingSurrogate(code: number): boolean {
  *
  * Printable ASCII is printed quoted, while other points are printed in Unicode
  * code point form (ie. U+1234).
+ * 
+ * @internal
  */
-function printCodePointAt(lexer: Lexer, location: number): string {
+export function printCodePointAt(lexer: Lexer, location: number): string {
   const code = lexer.source.body.codePointAt(location);
 
   if (code === undefined) {
@@ -247,11 +248,7 @@ function readNextToken(lexer: Lexer, start: number): Token {
       //   - FloatValue
       //   - StringValue
       //
-      // Punctuator ::
-      //   - DotPunctuator
-      //   - OtherPunctuator
-      //
-      // OtherPunctuator :: one of ! $ & ( ) ... : = @ [ ] { | }
+      // Punctuator :: one of ! $ & ( ) ... : = @ [ ] { | }
       case 0x0021: // !
         return createToken(lexer, TokenKind.BANG, position, position + 1);
       case 0x0024: // $
@@ -262,14 +259,14 @@ function readNextToken(lexer: Lexer, start: number): Token {
         return createToken(lexer, TokenKind.PAREN_L, position, position + 1);
       case 0x0029: // )
         return createToken(lexer, TokenKind.PAREN_R, position, position + 1);
-      case 0x002e: {
-        // .
-        const nextCode = body.charCodeAt(position + 1);
-        if (nextCode === 0x002e && body.charCodeAt(position + 2) === 0x002e) {
+      case 0x002e: // .
+        if (
+          body.charCodeAt(position + 1) === 0x002e &&
+          body.charCodeAt(position + 2) === 0x002e
+        ) {
           return createToken(lexer, TokenKind.SPREAD, position, position + 3);
         }
-        return readDot(lexer, position);
-      }
+        break;
       case 0x003a: // :
         return createToken(lexer, TokenKind.COLON, position, position + 1);
       case 0x003d: // =
@@ -313,41 +310,12 @@ function readNextToken(lexer: Lexer, start: number): Token {
       code === 0x0027
         ? 'Unexpected single quote character (\'), did you mean to use a double quote (")?'
         : isUnicodeScalarValue(code) || isSupplementaryCodePoint(body, position)
-          ? `Unexpected character: ${printCodePointAt(lexer, position)}.`
-          : `Invalid character: ${printCodePointAt(lexer, position)}.`,
+        ? `Unexpected character: ${printCodePointAt(lexer, position)}.`
+        : `Invalid character: ${printCodePointAt(lexer, position)}.`,
     );
   }
 
   return createToken(lexer, TokenKind.EOF, bodyLength, bodyLength);
-}
-
-/**
- * Reads a dot token with helpful messages for negative lookahead.
- *
- * DotPunctuator :: `.` [lookahead != {`.`, Digit}]
- */
-function readDot(lexer: Lexer, start: number): Token {
-  const nextCode = lexer.source.body.charCodeAt(start + 1);
-  // Full Stop (.)
-  if (nextCode === 0x002e) {
-    throw syntaxError(
-      lexer.source,
-      start,
-      'Unexpected "..", did you mean "..."?',
-    );
-  }
-  if (isDigit(nextCode)) {
-    const digits = lexer.source.body.slice(
-      start + 1,
-      readDigits(lexer, start + 1, nextCode),
-    );
-    throw syntaxError(
-      lexer.source,
-      start,
-      `Invalid number, expected digit before ".", did you mean "0.${digits}"?`,
-    );
-  }
-  return createToken(lexer, TokenKind.DOT, start, start + 1);
 }
 
 /**
@@ -709,10 +677,10 @@ function readHexDigit(code: number): number {
   return code >= 0x0030 && code <= 0x0039 // 0-9
     ? code - 0x0030
     : code >= 0x0041 && code <= 0x0046 // A-F
-      ? code - 0x0037
-      : code >= 0x0061 && code <= 0x0066 // a-f
-        ? code - 0x0057
-        : -1;
+    ? code - 0x0037
+    : code >= 0x0061 && code <= 0x0066 // a-f
+    ? code - 0x0057
+    : -1;
 }
 
 /**
@@ -863,8 +831,10 @@ function readBlockString(lexer: Lexer, start: number): Token {
  * Name ::
  *   - NameStart NameContinue* [lookahead != NameContinue]
  * ```
+ *
+ * @internal
  */
-function readName(lexer: Lexer, start: number): Token {
+export function readName(lexer: Lexer, start: number): Token {
   const body = lexer.source.body;
   const bodyLength = body.length;
   let position = start + 1;

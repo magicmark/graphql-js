@@ -4,7 +4,6 @@ import type { GraphQLError } from '../error/GraphQLError.js';
 import { syntaxError } from '../error/syntaxError.js';
 
 import type {
-  ArgumentCoordinateNode,
   ArgumentNode,
   BooleanValueNode,
   ConstArgumentNode,
@@ -13,10 +12,7 @@ import type {
   ConstObjectFieldNode,
   ConstObjectValueNode,
   ConstValueNode,
-  DefinitionNode,
-  DirectiveArgumentCoordinateNode,
-  DirectiveCoordinateNode,
-  DirectiveDefinitionNode,
+  DefinitionNode
   DirectiveNode,
   DocumentNode,
   EnumTypeDefinitionNode,
@@ -38,7 +34,6 @@ import type {
   IntValueNode,
   ListTypeNode,
   ListValueNode,
-  MemberCoordinateNode,
   NamedTypeNode,
   NameNode,
   NonNullTypeNode,
@@ -51,14 +46,12 @@ import type {
   OperationTypeDefinitionNode,
   ScalarTypeDefinitionNode,
   ScalarTypeExtensionNode,
-  SchemaCoordinateNode,
   SchemaDefinitionNode,
   SchemaExtensionNode,
   SelectionNode,
   SelectionSetNode,
   StringValueNode,
   Token,
-  TypeCoordinateNode,
   TypeNode,
   TypeSystemExtensionNode,
   UnionTypeDefinitionNode,
@@ -186,26 +179,6 @@ export function parseType(
   const type = parser.parseTypeReference();
   parser.expectToken(TokenKind.EOF);
   return type;
-}
-
-/**
- * Given a string containing a GraphQL Schema Coordinate (ex. `Type.field`),
- * parse the AST for that schema coordinate.
- * Throws GraphQLError if a syntax error is encountered.
- *
- * Consider providing the results to the utility function:
- * resolveASTSchemaCoordinate(). Or calling resolveSchemaCoordinate() directly
- * with an unparsed source.
- */
-export function parseSchemaCoordinate(
-  source: string | Source,
-  options?: ParseOptions,
-): SchemaCoordinateNode {
-  const parser = new Parser(source, options);
-  parser.expectToken(TokenKind.SOF);
-  const coordinate = parser.parseSchemaCoordinate();
-  parser.expectToken(TokenKind.EOF);
-  return coordinate;
 }
 
 /**
@@ -1457,68 +1430,6 @@ export class Parser {
       return name;
     }
     throw this.unexpected(start);
-  }
-
-  // Schema Coordinates
-
-  /**
-   * SchemaCoordinate :
-   *   - Name
-   *   - Name . Name
-   *   - Name . Name ( Name : )
-   *   - @ Name
-   *   - @ Name ( Name : )
-   */
-  parseSchemaCoordinate(): SchemaCoordinateNode {
-    const start = this._lexer.token;
-    const ofDirective = this.expectOptionalToken(TokenKind.AT);
-    const name = this.parseName();
-    let memberName: NameNode | undefined;
-    if (!ofDirective && this.expectOptionalToken(TokenKind.DOT)) {
-      memberName = this.parseName();
-    }
-    let argumentName: NameNode | undefined;
-    if (
-      (ofDirective || memberName) &&
-      this.expectOptionalToken(TokenKind.PAREN_L)
-    ) {
-      argumentName = this.parseName();
-      this.expectToken(TokenKind.COLON);
-      this.expectToken(TokenKind.PAREN_R);
-    }
-
-    if (ofDirective) {
-      if (argumentName) {
-        return this.node<DirectiveArgumentCoordinateNode>(start, {
-          kind: Kind.DIRECTIVE_ARGUMENT_COORDINATE,
-          name,
-          argumentName,
-        });
-      }
-      return this.node<DirectiveCoordinateNode>(start, {
-        kind: Kind.DIRECTIVE_COORDINATE,
-        name,
-      });
-    } else if (memberName) {
-      if (argumentName) {
-        return this.node<ArgumentCoordinateNode>(start, {
-          kind: Kind.ARGUMENT_COORDINATE,
-          name,
-          fieldName: memberName,
-          argumentName,
-        });
-      }
-      return this.node<MemberCoordinateNode>(start, {
-        kind: Kind.MEMBER_COORDINATE,
-        name,
-        memberName,
-      });
-    }
-
-    return this.node<TypeCoordinateNode>(start, {
-      kind: Kind.TYPE_COORDINATE,
-      name,
-    });
   }
 
   // Core parsing utility functions
