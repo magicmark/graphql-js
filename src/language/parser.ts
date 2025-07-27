@@ -119,7 +119,7 @@ export interface ParseOptions {
 
   /**
    * You may override the Lexer class used to lex the source; this is used by
-   * schema coordinates to introduce a lexer with a resticted syntax.
+   * schema coordinates to introduce a lexer with a restricted syntax.
    */
   lexer?: LexerInterface | undefined;
 }
