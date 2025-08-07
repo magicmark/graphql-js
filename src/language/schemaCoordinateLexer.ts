@@ -90,16 +90,12 @@ export class SchemaCoordinateLexer implements LexerInterface {
 function readNextToken(lexer: SchemaCoordinateLexer, start: number): Token {
   const body = lexer.source.body;
   const bodyLength = body.length;
-  let position = start;
+  const position = start;
 
-  while (position < bodyLength) {
+  if (position < bodyLength) {
     const code = body.charCodeAt(position);
 
-    // SourceCharacter
     switch (code) {
-      case 0xfeff: // <BOM>
-        ++position;
-        continue;
       case 0x002e: // .
         return createToken(lexer, TokenKind.DOT, position, position + 1);
       case 0x0028: // (

@@ -7,11 +7,6 @@ import { SchemaCoordinateLexer } from '../schemaCoordinateLexer.js';
 import { Source } from '../source.js';
 import { TokenKind } from '../tokenKind.js';
 
-function lexOne(str: string) {
-  const lexer = new SchemaCoordinateLexer(new Source(str));
-  return lexer.advance();
-}
-
 function lexSecond(str: string) {
   const lexer = new SchemaCoordinateLexer(new Source(str));
   lexer.advance();
@@ -45,15 +40,6 @@ describe('SchemaCoordinateLexer', () => {
     expectToThrowJSON(() => lexer.advance()).to.deep.equal({
       message: 'Syntax Error: Invalid character: U+000A.',
       locations: [{ line: 1, column: 1 }],
-    });
-  });
-
-  it('ignores BOM header', () => {
-    expect(lexOne('\uFEFFfoo')).to.contain({
-      kind: TokenKind.NAME,
-      start: 1,
-      end: 4,
-      value: 'foo',
     });
   });
 
