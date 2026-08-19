@@ -1,73 +1,95 @@
-// Spec Section: "Executable Definitions"
-import { ExecutableDefinitionsRule } from "./rules/ExecutableDefinitionsRule.mjs"; // Spec Section: "Operation Name Uniqueness"
-
-import { UniqueOperationNamesRule } from "./rules/UniqueOperationNamesRule.mjs"; // Spec Section: "Lone Anonymous Operation"
-
-import { LoneAnonymousOperationRule } from "./rules/LoneAnonymousOperationRule.mjs"; // Spec Section: "Subscriptions with Single Root Field"
-
-import { SingleFieldSubscriptionsRule } from "./rules/SingleFieldSubscriptionsRule.mjs"; // Spec Section: "Fragment Spread Type Existence"
-
-import { KnownTypeNamesRule } from "./rules/KnownTypeNamesRule.mjs"; // Spec Section: "Fragments on Composite Types"
-
-import { FragmentsOnCompositeTypesRule } from "./rules/FragmentsOnCompositeTypesRule.mjs"; // Spec Section: "Variables are Input Types"
-
-import { VariablesAreInputTypesRule } from "./rules/VariablesAreInputTypesRule.mjs"; // Spec Section: "Leaf Field Selections"
-
-import { ScalarLeafsRule } from "./rules/ScalarLeafsRule.mjs"; // Spec Section: "Field Selections on Objects, Interfaces, and Unions Types"
-
-import { FieldsOnCorrectTypeRule } from "./rules/FieldsOnCorrectTypeRule.mjs"; // Spec Section: "Fragment Name Uniqueness"
-
-import { UniqueFragmentNamesRule } from "./rules/UniqueFragmentNamesRule.mjs"; // Spec Section: "Fragment spread target defined"
-
-import { KnownFragmentNamesRule } from "./rules/KnownFragmentNamesRule.mjs"; // Spec Section: "Fragments must be used"
-
-import { NoUnusedFragmentsRule } from "./rules/NoUnusedFragmentsRule.mjs"; // Spec Section: "Fragment spread is possible"
-
-import { PossibleFragmentSpreadsRule } from "./rules/PossibleFragmentSpreadsRule.mjs"; // Spec Section: "Fragments must not form cycles"
-
-import { NoFragmentCyclesRule } from "./rules/NoFragmentCyclesRule.mjs"; // Spec Section: "Variable Uniqueness"
-
-import { UniqueVariableNamesRule } from "./rules/UniqueVariableNamesRule.mjs"; // Spec Section: "All Variable Used Defined"
-
-import { NoUndefinedVariablesRule } from "./rules/NoUndefinedVariablesRule.mjs"; // Spec Section: "All Variables Used"
-
-import { NoUnusedVariablesRule } from "./rules/NoUnusedVariablesRule.mjs"; // Spec Section: "Directives Are Defined"
-
-import { KnownDirectivesRule } from "./rules/KnownDirectivesRule.mjs"; // Spec Section: "Directives Are Unique Per Location"
-
-import { UniqueDirectivesPerLocationRule } from "./rules/UniqueDirectivesPerLocationRule.mjs"; // Spec Section: "Argument Names"
-
-import { KnownArgumentNamesRule, KnownArgumentNamesOnDirectivesRule } from "./rules/KnownArgumentNamesRule.mjs"; // Spec Section: "Argument Uniqueness"
-
-import { UniqueArgumentNamesRule } from "./rules/UniqueArgumentNamesRule.mjs"; // Spec Section: "Value Type Correctness"
-
-import { ValuesOfCorrectTypeRule } from "./rules/ValuesOfCorrectTypeRule.mjs"; // Spec Section: "Argument Optionality"
-
-import { ProvidedRequiredArgumentsRule, ProvidedRequiredArgumentsOnDirectivesRule } from "./rules/ProvidedRequiredArgumentsRule.mjs"; // Spec Section: "All Variable Usages Are Allowed"
-
-import { VariablesInAllowedPositionRule } from "./rules/VariablesInAllowedPositionRule.mjs"; // Spec Section: "Field Selection Merging"
-
-import { OverlappingFieldsCanBeMergedRule } from "./rules/OverlappingFieldsCanBeMergedRule.mjs"; // Spec Section: "Input Object Field Uniqueness"
-
-import { UniqueInputFieldNamesRule } from "./rules/UniqueInputFieldNamesRule.mjs"; // SDL-specific validation rules
-
+import { DeferStreamDirectiveLabelRule } from "./rules/DeferStreamDirectiveLabelRule.mjs";
+import { DeferStreamDirectiveOnRootFieldRule } from "./rules/DeferStreamDirectiveOnRootFieldRule.mjs";
+import { DeferStreamDirectiveOnValidOperationsRule } from "./rules/DeferStreamDirectiveOnValidOperationsRule.mjs";
+import { ExecutableDefinitionsRule } from "./rules/ExecutableDefinitionsRule.mjs";
+import { FieldsOnCorrectTypeRule } from "./rules/FieldsOnCorrectTypeRule.mjs";
+import { FragmentsOnCompositeTypesRule } from "./rules/FragmentsOnCompositeTypesRule.mjs";
+import { KnownArgumentNamesOnDirectivesRule, KnownArgumentNamesRule, } from "./rules/KnownArgumentNamesRule.mjs";
+import { KnownDirectivesRule } from "./rules/KnownDirectivesRule.mjs";
+import { KnownFragmentNamesRule } from "./rules/KnownFragmentNamesRule.mjs";
+import { KnownOperationTypesRule } from "./rules/KnownOperationTypesRule.mjs";
+import { KnownTypeNamesRule } from "./rules/KnownTypeNamesRule.mjs";
+import { LoneAnonymousOperationRule } from "./rules/LoneAnonymousOperationRule.mjs";
 import { LoneSchemaDefinitionRule } from "./rules/LoneSchemaDefinitionRule.mjs";
-import { UniqueOperationTypesRule } from "./rules/UniqueOperationTypesRule.mjs";
-import { UniqueTypeNamesRule } from "./rules/UniqueTypeNamesRule.mjs";
+import { MaxIntrospectionDepthRule } from "./rules/MaxIntrospectionDepthRule.mjs";
+import { NoFragmentCyclesRule } from "./rules/NoFragmentCyclesRule.mjs";
+import { NoUndefinedVariablesRule } from "./rules/NoUndefinedVariablesRule.mjs";
+import { NoUnusedFragmentsRule } from "./rules/NoUnusedFragmentsRule.mjs";
+import { NoUnusedVariablesRule } from "./rules/NoUnusedVariablesRule.mjs";
+import { OverlappingFieldsCanBeMergedRule } from "./rules/OverlappingFieldsCanBeMergedRule.mjs";
+import { PossibleFragmentSpreadsRule } from "./rules/PossibleFragmentSpreadsRule.mjs";
+import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs";
+import { ProvidedRequiredArgumentsOnDirectivesRule, ProvidedRequiredArgumentsRule, } from "./rules/ProvidedRequiredArgumentsRule.mjs";
+import { ScalarLeafsRule } from "./rules/ScalarLeafsRule.mjs";
+import { SingleFieldSubscriptionsRule } from "./rules/SingleFieldSubscriptionsRule.mjs";
+import { StreamDirectiveOnListFieldRule } from "./rules/StreamDirectiveOnListFieldRule.mjs";
+import { UniqueArgumentDefinitionNamesRule } from "./rules/UniqueArgumentDefinitionNamesRule.mjs";
+import { UniqueArgumentNamesRule } from "./rules/UniqueArgumentNamesRule.mjs";
+import { UniqueDirectiveNamesRule } from "./rules/UniqueDirectiveNamesRule.mjs";
+import { UniqueDirectivesPerLocationRule } from "./rules/UniqueDirectivesPerLocationRule.mjs";
 import { UniqueEnumValueNamesRule } from "./rules/UniqueEnumValueNamesRule.mjs";
 import { UniqueFieldDefinitionNamesRule } from "./rules/UniqueFieldDefinitionNamesRule.mjs";
-import { UniqueDirectiveNamesRule } from "./rules/UniqueDirectiveNamesRule.mjs";
-import { PossibleTypeExtensionsRule } from "./rules/PossibleTypeExtensionsRule.mjs";
-/**
- * This set includes all validation rules defined by the GraphQL spec.
- *
- * The order of the rules in this list has been adjusted to lead to the
- * most clear output when encountering multiple validation errors.
- */
-
-export var specifiedRules = Object.freeze([ExecutableDefinitionsRule, UniqueOperationNamesRule, LoneAnonymousOperationRule, SingleFieldSubscriptionsRule, KnownTypeNamesRule, FragmentsOnCompositeTypesRule, VariablesAreInputTypesRule, ScalarLeafsRule, FieldsOnCorrectTypeRule, UniqueFragmentNamesRule, KnownFragmentNamesRule, NoUnusedFragmentsRule, PossibleFragmentSpreadsRule, NoFragmentCyclesRule, UniqueVariableNamesRule, NoUndefinedVariablesRule, NoUnusedVariablesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, KnownArgumentNamesRule, UniqueArgumentNamesRule, ValuesOfCorrectTypeRule, ProvidedRequiredArgumentsRule, VariablesInAllowedPositionRule, OverlappingFieldsCanBeMergedRule, UniqueInputFieldNamesRule]);
-/**
- * @internal
- */
-
-export var specifiedSDLRules = Object.freeze([LoneSchemaDefinitionRule, UniqueOperationTypesRule, UniqueTypeNamesRule, UniqueEnumValueNamesRule, UniqueFieldDefinitionNamesRule, UniqueDirectiveNamesRule, KnownTypeNamesRule, KnownDirectivesRule, UniqueDirectivesPerLocationRule, PossibleTypeExtensionsRule, KnownArgumentNamesOnDirectivesRule, UniqueArgumentNamesRule, UniqueInputFieldNamesRule, ProvidedRequiredArgumentsOnDirectivesRule]);
+import { UniqueFragmentNamesRule } from "./rules/UniqueFragmentNamesRule.mjs";
+import { UniqueInputFieldNamesRule } from "./rules/UniqueInputFieldNamesRule.mjs";
+import { UniqueOperationNamesRule } from "./rules/UniqueOperationNamesRule.mjs";
+import { UniqueOperationTypesRule } from "./rules/UniqueOperationTypesRule.mjs";
+import { UniqueTypeNamesRule } from "./rules/UniqueTypeNamesRule.mjs";
+import { UniqueVariableNamesRule } from "./rules/UniqueVariableNamesRule.mjs";
+import { ValuesOfCorrectTypeRule } from "./rules/ValuesOfCorrectTypeRule.mjs";
+import { VariablesAreInputTypesRule } from "./rules/VariablesAreInputTypesRule.mjs";
+import { VariablesInAllowedPositionRule } from "./rules/VariablesInAllowedPositionRule.mjs";
+export const recommendedRules = Object.freeze([
+    MaxIntrospectionDepthRule,
+]);
+export const specifiedRules = Object.freeze([
+    ExecutableDefinitionsRule,
+    KnownOperationTypesRule,
+    UniqueOperationNamesRule,
+    LoneAnonymousOperationRule,
+    SingleFieldSubscriptionsRule,
+    KnownTypeNamesRule,
+    FragmentsOnCompositeTypesRule,
+    VariablesAreInputTypesRule,
+    ScalarLeafsRule,
+    FieldsOnCorrectTypeRule,
+    UniqueFragmentNamesRule,
+    KnownFragmentNamesRule,
+    NoUnusedFragmentsRule,
+    PossibleFragmentSpreadsRule,
+    NoFragmentCyclesRule,
+    UniqueVariableNamesRule,
+    NoUndefinedVariablesRule,
+    NoUnusedVariablesRule,
+    KnownDirectivesRule,
+    UniqueDirectivesPerLocationRule,
+    DeferStreamDirectiveOnRootFieldRule,
+    DeferStreamDirectiveOnValidOperationsRule,
+    DeferStreamDirectiveLabelRule,
+    StreamDirectiveOnListFieldRule,
+    KnownArgumentNamesRule,
+    UniqueArgumentNamesRule,
+    ValuesOfCorrectTypeRule,
+    ProvidedRequiredArgumentsRule,
+    VariablesInAllowedPositionRule,
+    OverlappingFieldsCanBeMergedRule,
+    UniqueInputFieldNamesRule,
+    ...recommendedRules,
+]);
+export const specifiedSDLRules = Object.freeze([
+    LoneSchemaDefinitionRule,
+    UniqueOperationTypesRule,
+    UniqueTypeNamesRule,
+    UniqueEnumValueNamesRule,
+    UniqueFieldDefinitionNamesRule,
+    UniqueArgumentDefinitionNamesRule,
+    UniqueDirectiveNamesRule,
+    KnownTypeNamesRule,
+    KnownDirectivesRule,
+    UniqueDirectivesPerLocationRule,
+    PossibleTypeExtensionsRule,
+    KnownArgumentNamesOnDirectivesRule,
+    UniqueArgumentNamesRule,
+    UniqueInputFieldNamesRule,
+    ProvidedRequiredArgumentsOnDirectivesRule,
+]);
+//# sourceMappingURL=specifiedRules.js.map

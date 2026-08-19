@@ -1,45 +1,34 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScalarLeafsRule = ScalarLeafsRule;
-
-var _inspect = _interopRequireDefault(require("../../jsutils/inspect"));
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-var _definition = require("../../type/definition");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Scalar leafs
- *
- * A GraphQL document is valid only if all leaf fields (fields without
- * sub selections) are of scalar or enum types.
- */
+const inspect_ts_1 = require("../../jsutils/inspect.js");
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
+const definition_ts_1 = require("../../type/definition.js");
 function ScalarLeafsRule(context) {
-  return {
-    Field: function Field(node) {
-      var type = context.getType();
-      var selectionSet = node.selectionSet;
-
-      if (type) {
-        if ((0, _definition.isLeafType)((0, _definition.getNamedType)(type))) {
-          if (selectionSet) {
-            var fieldName = node.name.value;
-            var typeStr = (0, _inspect.default)(type);
-            context.reportError(new _GraphQLError.GraphQLError("Field \"".concat(fieldName, "\" must not have a selection since type \"").concat(typeStr, "\" has no subfields."), selectionSet));
-          }
-        } else if (!selectionSet) {
-          var _fieldName = node.name.value;
-
-          var _typeStr = (0, _inspect.default)(type);
-
-          context.reportError(new _GraphQLError.GraphQLError("Field \"".concat(_fieldName, "\" of type \"").concat(_typeStr, "\" must have a selection of subfields. Did you mean \"").concat(_fieldName, " { ... }\"?"), node));
-        }
-      }
-    }
-  };
+    return {
+        Field(node) {
+            const type = context.getType();
+            const selectionSet = node.selectionSet;
+            if (type) {
+                if ((0, definition_ts_1.isLeafType)((0, definition_ts_1.getNamedType)(type))) {
+                    if (selectionSet) {
+                        const fieldName = node.name.value;
+                        const typeStr = (0, inspect_ts_1.inspect)(type);
+                        context.reportError(new GraphQLError_ts_1.GraphQLError(`Field "${fieldName}" must not have a selection since type "${typeStr}" has no subfields.`, { nodes: selectionSet }));
+                    }
+                }
+                else if (!selectionSet) {
+                    const fieldName = node.name.value;
+                    const typeStr = (0, inspect_ts_1.inspect)(type);
+                    context.reportError(new GraphQLError_ts_1.GraphQLError(`Field "${fieldName}" of type "${typeStr}" must have a selection of subfields. Did you mean "${fieldName} { ... }"?`, { nodes: node }));
+                }
+                else if (selectionSet.selections.length === 0) {
+                    const fieldName = node.name.value;
+                    const typeStr = (0, inspect_ts_1.inspect)(type);
+                    context.reportError(new GraphQLError_ts_1.GraphQLError(`Field "${fieldName}" of type "${typeStr}" must have at least one field selected.`, { nodes: node }));
+                }
+            }
+        },
+    };
 }
+//# sourceMappingURL=ScalarLeafsRule.js.map

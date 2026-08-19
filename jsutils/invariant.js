@@ -1,15 +1,9 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = invariant;
-
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.invariant = invariant;
 function invariant(condition, message) {
-  var booleanCondition = Boolean(condition);
-  /* istanbul ignore else (see transformation done in './resources/inlineInvariant.js') */
-
-  if (!booleanCondition) {
-    throw new Error(message != null ? message : 'Unexpected invariant triggered.');
-  }
+    if (!condition) {
+        throw new Error(message ?? 'Unexpected invariant triggered.');
+    }
 }
+//# sourceMappingURL=invariant.js.map

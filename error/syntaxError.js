@@ -1,16 +1,11 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.syntaxError = syntaxError;
-
-var _GraphQLError = require("./GraphQLError");
-
-/**
- * Produces a GraphQLError representing a syntax error, containing useful
- * descriptive information about the syntax error's position in the source.
- */
+const GraphQLError_ts_1 = require("./GraphQLError.js");
 function syntaxError(source, position, description) {
-  return new _GraphQLError.GraphQLError("Syntax Error: ".concat(description), undefined, source, [position]);
+    return new GraphQLError_ts_1.GraphQLError(`Syntax Error: ${description}`, {
+        source,
+        positions: [position],
+    });
 }
+//# sourceMappingURL=syntaxError.js.map

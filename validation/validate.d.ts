@@ -1,15 +1,19 @@
-import Maybe from '../tsutils/Maybe';
-
-import { GraphQLError } from '../error/GraphQLError';
-
-import { DocumentNode } from '../language/ast';
-
-import { GraphQLSchema } from '../type/schema';
-
-import { TypeInfo } from '../utilities/TypeInfo';
-
-import { ValidationRule, SDLValidationRule } from './ValidationContext';
-
+/** @category Validation */
+import type { Maybe } from "../jsutils/Maybe.js";
+import { GraphQLError } from "../error/GraphQLError.js";
+import type { DocumentNode } from "../language/ast.js";
+import type { GraphQLSchema } from "../type/schema.js";
+import type { SDLValidationRule, ValidationRule } from "./ValidationContext.js";
+/**
+ * Options used when validating a GraphQL document.
+ * @category Validation
+ */
+export interface ValidationOptions {
+    /** Maximum number of validation errors before validation stops. */
+    maxErrors?: number;
+    /** Whether suggestion text should be omitted from validation errors. */
+    hideSuggestions?: Maybe<boolean>;
+}
 /**
  * Implements the "Validation" section of the spec.
  *
@@ -19,45 +23,81 @@ import { ValidationRule, SDLValidationRule } from './ValidationContext';
  * A list of specific validation rules may be provided. If not provided, the
  * default list of rules defined by the GraphQL specification will be used.
  *
- * Each validation rules is a function which returns a visitor
+ * Each validation rule is a function that returns a visitor
  * (see the language/visitor API). Visitor methods are expected to return
  * GraphQLErrors, or Arrays of GraphQLErrors when invalid.
  *
- * Optionally a custom TypeInfo instance may be provided. If not provided, one
- * will be created from the provided schema.
+ * Validate will stop validation after a `maxErrors` limit has been reached.
+ * Attackers can send pathologically invalid queries to induce a DoS attack,
+ * so `maxErrors` defaults to 100 errors.
+ * @param schema - Schema to validate against.
+ * @param documentAST - Document AST to validate.
+ * @param rules - Validation rules to apply.
+ * @param options - Validation options, including error limits and suggestions.
+ * @returns Validation errors, or an empty array when the document is valid.
+ * @example
+ * ```ts
+ * // Validate with the default specified rules.
+ * import { parse } from 'graphql/language';
+ * import { buildSchema } from 'graphql/utilities';
+ * import { validate } from 'graphql/validation';
+ *
+ * const schema = buildSchema(`
+ *   type Query {
+ *     fullName: String
+ *   }
+ * `);
+ *
+ * validate(schema, parse('{ greeting }')); // => []
+ *
+ * const errors = validate(schema, parse('{ missing }'));
+ * errors[0].message; // => 'Cannot query field "missing" on type "Query".'
+ * ```
+ * @example
+ * ```ts
+ * // This variant uses a custom rule list and validation options.
+ * import { parse } from 'graphql/language';
+ * import { buildSchema } from 'graphql/utilities';
+ * import { FieldsOnCorrectTypeRule, validate } from 'graphql/validation';
+ *
+ * const schema = buildSchema(`
+ *   type Query {
+ *     greeting: String
+ *   }
+ * `);
+ * const document = parse('{ missingOne missingTwo }');
+ *
+ * const errors = validate(schema, document, [FieldsOnCorrectTypeRule], {
+ *   maxErrors: 1,
+ * });
+ *
+ * errors.length; // => 2
+ * errors[1].message; // => 'Too many validation errors, error limit reached. Validation aborted.'
+ *
+ * const hiddenSuggestionErrors = validate(
+ *   schema,
+ *   parse('{ name }'),
+ *   [FieldsOnCorrectTypeRule],
+ *   { hideSuggestions: true },
+ * );
+ *
+ * hiddenSuggestionErrors[0].message; // => 'Cannot query field "name" on type "Query".'
+ * ```
  */
-export function validate(
-  schema: GraphQLSchema,
-  documentAST: DocumentNode,
-  rules?: ReadonlyArray<ValidationRule>,
-  typeInfo?: TypeInfo,
-  options?: { maxErrors?: number },
-): ReadonlyArray<GraphQLError>;
-
-/**
- * @internal
- */
-export function validateSDL(
-  documentAST: DocumentNode,
-  schemaToExtend?: Maybe<GraphQLSchema>,
-  rules?: ReadonlyArray<SDLValidationRule>,
-): Array<GraphQLError>;
-
+export declare function validate(schema: GraphQLSchema, documentAST: DocumentNode, rules?: ReadonlyArray<ValidationRule>, options?: ValidationOptions): ReadonlyArray<GraphQLError>;
+/** @internal */
+export declare function validateSDL(documentAST: DocumentNode, schemaToExtend?: Maybe<GraphQLSchema>, rules?: ReadonlyArray<SDLValidationRule>): ReadonlyArray<GraphQLError>;
 /**
  * Utility function which asserts a SDL document is valid by throwing an error
  * if it is invalid.
  *
  * @internal
  */
-export function assertValidSDL(documentAST: DocumentNode): undefined;
-
+export declare function assertValidSDL(documentAST: DocumentNode): void;
 /**
  * Utility function which asserts a SDL document is valid by throwing an error
  * if it is invalid.
  *
  * @internal
  */
-export function assertValidSDLExtension(
-  documentAST: DocumentNode,
-  schema: GraphQLSchema,
-): undefined;
+export declare function assertValidSDLExtension(documentAST: DocumentNode, schema: GraphQLSchema): void;

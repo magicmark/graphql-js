@@ -1,18 +1,117 @@
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 export function getIntrospectionQuery(options) {
-  var optionsWithDefault = _objectSpread({
-    descriptions: true,
-    directiveIsRepeatable: false,
-    schemaDescription: false
-  }, options);
+    const optionsWithDefault = {
+        descriptions: true,
+        specifiedByUrl: false,
+        directiveIsRepeatable: false,
+        schemaDescription: false,
+        inputValueDeprecation: false,
+        experimentalDirectiveDeprecation: false,
+        oneOf: false,
+        typeDepth: 9,
+        ...options,
+    };
+    const descriptions = optionsWithDefault.descriptions ? 'description' : '';
+    const specifiedByUrl = optionsWithDefault.specifiedByUrl
+        ? 'specifiedByURL'
+        : '';
+    const directiveIsRepeatable = optionsWithDefault.directiveIsRepeatable
+        ? 'isRepeatable'
+        : '';
+    const schemaDescription = optionsWithDefault.schemaDescription
+        ? descriptions
+        : '';
+    function inputDeprecation(str) {
+        return optionsWithDefault.inputValueDeprecation ? str : '';
+    }
+    function experimentalDirectiveDeprecation(str) {
+        return optionsWithDefault.experimentalDirectiveDeprecation ? str : '';
+    }
+    const oneOf = optionsWithDefault.oneOf ? 'isOneOf' : '';
+    function ofType(level, indent) {
+        if (level <= 0) {
+            return '';
+        }
+        if (level > 100) {
+            throw new Error('Please set typeDepth to a reasonable value between 0 and 100; the default is 9.');
+        }
+        return `
+${indent}ofType {
+${indent}  name
+${indent}  kind${ofType(level - 1, indent + '  ')}
+${indent}}`;
+    }
+    return `
+    query IntrospectionQuery {
+      __schema {
+        ${schemaDescription}
+        queryType { name kind }
+        mutationType { name kind }
+        subscriptionType { name kind }
+        types {
+          ...FullType
+        }
+        directives${experimentalDirectiveDeprecation('(includeDeprecated: true)')} {
+          name
+          ${descriptions}
+          ${directiveIsRepeatable}
+          ${experimentalDirectiveDeprecation('isDeprecated')}
+          ${experimentalDirectiveDeprecation('deprecationReason')}
+          locations
+          args${inputDeprecation('(includeDeprecated: true)')} {
+            ...InputValue
+          }
+        }
+      }
+    }
 
-  var descriptions = optionsWithDefault.descriptions ? 'description' : '';
-  var directiveIsRepeatable = optionsWithDefault.directiveIsRepeatable ? 'isRepeatable' : '';
-  var schemaDescription = optionsWithDefault.schemaDescription ? descriptions : '';
-  return "\n    query IntrospectionQuery {\n      __schema {\n        ".concat(schemaDescription, "\n        queryType { name }\n        mutationType { name }\n        subscriptionType { name }\n        types {\n          ...FullType\n        }\n        directives {\n          name\n          ").concat(descriptions, "\n          ").concat(directiveIsRepeatable, "\n          locations\n          args {\n            ...InputValue\n          }\n        }\n      }\n    }\n\n    fragment FullType on __Type {\n      kind\n      name\n      ").concat(descriptions, "\n      fields(includeDeprecated: true) {\n        name\n        ").concat(descriptions, "\n        args {\n          ...InputValue\n        }\n        type {\n          ...TypeRef\n        }\n        isDeprecated\n        deprecationReason\n      }\n      inputFields {\n        ...InputValue\n      }\n      interfaces {\n        ...TypeRef\n      }\n      enumValues(includeDeprecated: true) {\n        name\n        ").concat(descriptions, "\n        isDeprecated\n        deprecationReason\n      }\n      possibleTypes {\n        ...TypeRef\n      }\n    }\n\n    fragment InputValue on __InputValue {\n      name\n      ").concat(descriptions, "\n      type { ...TypeRef }\n      defaultValue\n    }\n\n    fragment TypeRef on __Type {\n      kind\n      name\n      ofType {\n        kind\n        name\n        ofType {\n          kind\n          name\n          ofType {\n            kind\n            name\n            ofType {\n              kind\n              name\n              ofType {\n                kind\n                name\n                ofType {\n                  kind\n                  name\n                  ofType {\n                    kind\n                    name\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  ");
+    fragment FullType on __Type {
+      kind
+      name
+      ${descriptions}
+      ${specifiedByUrl}
+      ${oneOf}
+      fields(includeDeprecated: true) {
+        name
+        ${descriptions}
+        args${inputDeprecation('(includeDeprecated: true)')} {
+          ...InputValue
+        }
+        type {
+          ...TypeRef
+        }
+        isDeprecated
+        deprecationReason
+      }
+      inputFields${inputDeprecation('(includeDeprecated: true)')} {
+        ...InputValue
+      }
+      interfaces {
+        ...TypeRef
+      }
+      enumValues(includeDeprecated: true) {
+        name
+        ${descriptions}
+        isDeprecated
+        deprecationReason
+      }
+      possibleTypes {
+        ...TypeRef
+      }
+    }
+
+    fragment InputValue on __InputValue {
+      name
+      ${descriptions}
+      type { ...TypeRef }
+      defaultValue
+      ${inputDeprecation('isDeprecated')}
+      ${inputDeprecation('deprecationReason')}
+    }
+
+    fragment TypeRef on __Type {
+      kind
+      name${ofType(optionsWithDefault.typeDepth, '      ')}
+    }
+  `;
 }
+//# sourceMappingURL=getIntrospectionQuery.js.map

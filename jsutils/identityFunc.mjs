@@ -1,6 +1,4 @@
-/**
- * Returns the first argument it receives.
- */
-export default function identityFunc(x) {
-  return x;
+export function identityFunc(x) {
+    return x;
 }
+//# sourceMappingURL=identityFunc.js.map

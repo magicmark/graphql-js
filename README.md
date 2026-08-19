@@ -3,8 +3,7 @@
 The JavaScript reference implementation for GraphQL, a query language for APIs created by Facebook.
 
 [![npm version](https://badge.fury.io/js/graphql.svg)](https://badge.fury.io/js/graphql)
-[![Build Status](https://travis-ci.org/graphql/graphql-js.svg?branch=master)](https://travis-ci.org/graphql/graphql-js?branch=master)
-[![Coverage Status](https://codecov.io/gh/graphql/graphql-js/branch/master/graph/badge.svg)](https://codecov.io/gh/graphql/graphql-js)
+[![Build Status](https://github.com/graphql/graphql-js/actions/workflows/push.yml/badge.svg?branch=17.x.x)](https://github.com/graphql/graphql-js/actions/workflows/push.yml?query=branch%3A17.x.x)
 
 See more complete documentation at https://graphql.org/ and
 https://graphql.org/graphql-js/.
@@ -13,8 +12,8 @@ Looking for help? Find resources [from the community](https://graphql.org/commun
 
 ## Getting Started
 
-An overview of GraphQL in general is available in the
-[README](https://github.com/graphql/graphql-spec/blob/master/README.md) for the
+A general overview of GraphQL is available in the
+[README](https://github.com/graphql/graphql-spec/blob/main/README.md) for the
 [Specification for GraphQL](https://github.com/graphql/graphql-spec). That overview
 describes a simple set of GraphQL examples that exist as [tests](src/__tests__)
 in this repository. A good way to get started with this repository is to walk
@@ -24,22 +23,28 @@ through that README and the corresponding tests in parallel.
 
 Install GraphQL.js from npm
 
-With yarn:
-
-```sh
-yarn add graphql
-```
-
-or alternatively using npm:
+With `npm`:
 
 ```sh
 npm install --save graphql
 ```
 
-GraphQL.js provides two important capabilities: building a type schema, and
+With `yarn`:
+
+```sh
+yarn add graphql
+```
+
+With `bun`:
+
+```sh
+bun add graphql
+```
+
+GraphQL.js provides two important capabilities: building a type schema and
 serving queries against that type schema.
 
-First, build a GraphQL type schema which maps to your code base.
+First, build a GraphQL type schema which maps to your codebase.
 
 ```js
 import {
@@ -64,17 +69,16 @@ var schema = new GraphQLSchema({
 });
 ```
 
-This defines a simple schema with one type and one field, that resolves
+This defines a simple schema, with one type and one field, that resolves
 to a fixed value. The `resolve` function can return a value, a promise,
-or an array of promises. A more complex example is included in the top
-level [tests](src/__tests__) directory.
+or an array of promises. A more complex example is included in the top-level [tests](src/__tests__) directory.
 
 Then, serve the result of a query against that type schema.
 
 ```js
-var query = '{ hello }';
+var source = '{ hello }';
 
-graphql(schema, query).then((result) => {
+graphql({ schema, source }).then((result) => {
   // Prints
   // {
   //   data: { hello: "world" }
@@ -88,9 +92,9 @@ first ensure the query is syntactically and semantically valid before executing
 it, reporting errors otherwise.
 
 ```js
-var query = '{ BoyHowdy }';
+var source = '{ BoyHowdy }';
 
-graphql(schema, query).then((result) => {
+graphql({ schema, source }).then((result) => {
   // Prints
   // {
   //   errors: [
@@ -102,12 +106,10 @@ graphql(schema, query).then((result) => {
 });
 ```
 
-**Note**: Please don't forget to set `NODE_ENV=production` if you are running a production server it will disable some checks that can be useful during development but will significantly improve performance.
-
-### Want to ride the bleeding edge?
+## Want to ride the bleeding edge?
 
 The `npm` branch in this repository is automatically maintained to be the last
-commit to `master` to pass all tests, in the same form found on npm. It is
+commit to `17.x.x` to pass all tests, in the same form found on npm. It is
 recommended to use builds deployed to npm for many reasons, but if you want to use
 the latest not-yet-released version of graphql-js, you can do so by depending
 directly on this branch:
@@ -116,54 +118,80 @@ directly on this branch:
 npm install graphql@git://github.com/graphql/graphql-js.git#npm
 ```
 
-### Using in a Browser
+## Using in a Browser
 
-GraphQL.js is a general purpose library and can be used both in a Node server
+GraphQL.js is a general-purpose library and can be used both in a Node server
 and in the browser. As an example, the [GraphiQL](https://github.com/graphql/graphiql/)
 tool is built with GraphQL.js!
 
 Building a project using GraphQL.js with [webpack](https://webpack.js.org) or
 [rollup](https://github.com/rollup/rollup) should just work and only include
 the portions of the library you use. This works because GraphQL.js is distributed
-with both CommonJS (`require()`) and ESModule (`import`) files. Ensure that any
-custom build configurations look for `.mjs` files!
+with both CommonJS (`require()`) and ESModule (`import`) files. The `exports`
+map within the project `package.json` should direct runtimes and bundlers to
+the appropriate files. Tools that do not support `exports` will find the CommonJS
+and ESModule builds side by side, with the CommonJS code packaged
+in files with the `.js` extension and the ESModule build within `.mjs` files.
 
-### Contributing
+## Contributing
 
-We actively welcome pull requests, learn how to
-[contribute](https://github.com/graphql/graphql-js/blob/master/.github/CONTRIBUTING.md).
+We actively welcome pull requests. Learn how to [contribute](./.github/CONTRIBUTING.md).
 
-### Changelog
+This repository is managed by EasyCLA. Project participants must sign the free [GraphQL Specification Membership agreement](https://preview-spec-membership.graphql.org) before making a contribution. You only need to do this one time, and it can be signed by [individual contributors](http://individual-spec-membership.graphql.org/) or their [employers](http://corporate-spec-membership.graphql.org/).
+
+To initiate the signature process please open a PR against this repo. The EasyCLA bot will block the merge if we still need a membership agreement from you.
+
+You can find [detailed information here](https://github.com/graphql/graphql-wg/tree/main/membership). If you have issues, please email [operations@graphql.org](mailto:operations@graphql.org).
+
+If your company benefits from GraphQL and you would like to provide essential financial support for the systems and people that power our community, please also consider membership in the [GraphQL Foundation](https://foundation.graphql.org/join).
+
+## Changelog
 
 Changes are tracked as [GitHub releases](https://github.com/graphql/graphql-js/releases).
 
-### License
+## License
 
-GraphQL.js is [MIT-licensed](https://github.com/graphql/graphql-js/blob/master/LICENSE).
+GraphQL.js is [MIT-licensed](./LICENSE).
 
-### Credits
+## Version Support
 
-The `*.d.ts` files in this project are based on [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/54712a7e28090c5b1253b746d1878003c954f3ff/types/graphql) definitions written by:
+GraphQL.JS follows Semantic Versioning (SemVer) for its releases. Our version support policy is as follows:
 
-<!--- spell-checker:disable -->
+- Latest Major Version: We provide full support, including bug fixes and security updates, for the latest major version of GraphQL.JS.
+- Previous Major Version: We offer feature support for the previous major version for 12 months after the release of the newest major version.
+  This means that for 12 months we can backport features for specification changes _if_ they don't cause any breaking changes. We'll continue
+  supporting the previous major version with bug and security fixes.
+- Older Versions: Versions older than the previous major release are considered unsupported. While the code remains available,
+  we do not actively maintain or provide updates for these versions.
+  One exception to this rule is when the older version has been released < 1 year ago, in that case we
+  will treat it like the "Previous Major Version".
 
-- TonyYang https://github.com/TonyPythoneer
-- Caleb Meredith https://github.com/calebmer
-- Dominic Watson https://github.com/intellix
-- Firede https://github.com/firede
-- Kepennar https://github.com/kepennar
-- Mikhail Novikov https://github.com/freiksenet
-- Ivan Goncharov https://github.com/IvanGoncharov
-- Hagai Cohen https://github.com/DxCx
-- Ricardo Portugal https://github.com/rportugal
-- Tim Griesser https://github.com/tgriesser
-- Dylan Stewart https://github.com/dyst5422
-- Alessio Dionisi https://github.com/adnsio
-- Divyendu Singh https://github.com/divyenduz
-- Brad Zacher https://github.com/bradzacher
-- Curtis Layne https://github.com/clayne11
-- Jonathan Cardoso https://github.com/JCMais
-- Pavel Lang https://github.com/langpavel
-- Mark Caudill https://github.com/mc0
-- Martijn Walraven https://github.com/martijnwalraven
-- Jed Mao https://github.com/jedmao
+### Long-Term Support (LTS)
+
+We do not currently offer a Long-Term Support version of GraphQL.JS. Users are encouraged to upgrade to the latest stable version
+to receive the most up-to-date features, performance improvements, and security updates.
+
+### End-of-Life (EOL) Schedule
+
+We will announce the EOL date for a major version at least 6 months in advance.
+After a version reaches its EOL, it will no longer receive updates, even for critical security issues.
+
+### Upgrade Assistance
+
+To assist users in upgrading to newer versions:
+
+- We maintain detailed release notes for each version, highlighting new features, breaking changes, and deprecations.
+- [Our documentation](https://www.graphql-js.org/) includes migration guides for moving between major versions.
+- The [community forum (Discord channel #graphql-js)](https://discord.graphql.org) is available for users who need additional assistance with upgrades.
+
+### Security Updates
+
+We prioritize the security of GraphQL.JS:
+
+- Critical security updates will be applied to both the current and previous major version.
+- For versions that have reached EOL, we strongly recommend upgrading to a supported version to receive security updates.
+
+### Community Contributions
+
+We welcome community contributions for all versions of GraphQL.JS. However, our maintainers will primarily focus on reviewing
+and merging contributions for supported versions.

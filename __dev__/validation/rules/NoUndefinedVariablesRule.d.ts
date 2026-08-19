@@ -1,0 +1,1 @@
+export * from '../../../validation/rules/NoUndefinedVariablesRule.js';

@@ -1,36 +1,26 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.UniqueDirectiveNamesRule = UniqueDirectiveNamesRule;
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-/**
- * Unique directive names
- *
- * A GraphQL document is only valid if all defined directives have unique names.
- */
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
 function UniqueDirectiveNamesRule(context) {
-  var knownDirectiveNames = Object.create(null);
-  var schema = context.getSchema();
-  return {
-    DirectiveDefinition: function DirectiveDefinition(node) {
-      var directiveName = node.name.value;
-
-      if (schema === null || schema === void 0 ? void 0 : schema.getDirective(directiveName)) {
-        context.reportError(new _GraphQLError.GraphQLError("Directive \"@".concat(directiveName, "\" already exists in the schema. It cannot be redefined."), node.name));
-        return;
-      }
-
-      if (knownDirectiveNames[directiveName]) {
-        context.reportError(new _GraphQLError.GraphQLError("There can be only one directive named \"@".concat(directiveName, "\"."), [knownDirectiveNames[directiveName], node.name]));
-      } else {
-        knownDirectiveNames[directiveName] = node.name;
-      }
-
-      return false;
-    }
-  };
+    const knownDirectiveNames = new Map();
+    const schema = context.getSchema();
+    return {
+        DirectiveDefinition(node) {
+            const directiveName = node.name.value;
+            if (schema?.getDirective(directiveName)) {
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`Directive "@${directiveName}" already exists in the schema. It cannot be redefined.`, { nodes: node.name }));
+                return;
+            }
+            const knownName = knownDirectiveNames.get(directiveName);
+            if (knownName) {
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`There can be only one directive named "@${directiveName}".`, { nodes: [knownName, node.name] }));
+            }
+            else {
+                knownDirectiveNames.set(directiveName, node.name);
+            }
+            return false;
+        },
+    };
 }
+//# sourceMappingURL=UniqueDirectiveNamesRule.js.map

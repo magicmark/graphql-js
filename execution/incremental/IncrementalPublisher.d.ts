@@ -1,0 +1,15 @@
+import type { ObjMap } from "../../jsutils/ObjMap.js";
+import type { GraphQLError } from "../../error/GraphQLError.js";
+import type { ExperimentalIncrementalExecutionResults, IncrementalWork } from "./IncrementalExecutor.js";
+/** @internal */
+export declare class IncrementalPublisher {
+    private _ids;
+    private _nextId;
+    constructor();
+    buildResponse(data: ObjMap<unknown>, errors: ReadonlyArray<GraphQLError>, work: IncrementalWork, abortSignal: AbortSignal | undefined, onFinished: () => void): ExperimentalIncrementalExecutionResults;
+    private _ensureId;
+    private _toPendingResults;
+    private _handleBatch;
+    private _handleWorkQueueEvent;
+    private _getBestIdAndSubPath;
+}

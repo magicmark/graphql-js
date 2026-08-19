@@ -1,72 +1,68 @@
 import { GraphQLError } from "../../error/GraphQLError.mjs";
 import { Kind } from "../../language/kinds.mjs";
-import { isTypeDefinitionNode, isTypeExtensionNode } from "../../language/predicates.mjs";
+import { isTypeDefinitionNode, isTypeExtensionNode, } from "../../language/predicates.mjs";
 import { specifiedDirectives } from "../../type/directives.mjs";
-
-/**
- * Unique directive names per location
- *
- * A GraphQL document is only valid if all non-repeatable directives at
- * a given location are uniquely named.
- */
 export function UniqueDirectivesPerLocationRule(context) {
-  var uniqueDirectiveMap = Object.create(null);
-  var schema = context.getSchema();
-  var definedDirectives = schema ? schema.getDirectives() : specifiedDirectives;
-
-  for (var _i2 = 0; _i2 < definedDirectives.length; _i2++) {
-    var directive = definedDirectives[_i2];
-    uniqueDirectiveMap[directive.name] = !directive.isRepeatable;
-  }
-
-  var astDefinitions = context.getDocument().definitions;
-
-  for (var _i4 = 0; _i4 < astDefinitions.length; _i4++) {
-    var def = astDefinitions[_i4];
-
-    if (def.kind === Kind.DIRECTIVE_DEFINITION) {
-      uniqueDirectiveMap[def.name.value] = !def.repeatable;
+    const uniqueDirectiveMap = new Map();
+    const schema = context.getSchema();
+    const definedDirectives = schema
+        ? schema.getDirectives()
+        : specifiedDirectives;
+    for (const directive of definedDirectives) {
+        uniqueDirectiveMap.set(directive.name, !directive.isRepeatable);
     }
-  }
-
-  var schemaDirectives = Object.create(null);
-  var typeDirectivesMap = Object.create(null);
-  return {
-    // Many different AST nodes may contain directives. Rather than listing
-    // them all, just listen for entering any node, and check to see if it
-    // defines any directives.
-    enter: function enter(node) {
-      if (node.directives == null) {
-        return;
-      }
-
-      var seenDirectives;
-
-      if (node.kind === Kind.SCHEMA_DEFINITION || node.kind === Kind.SCHEMA_EXTENSION) {
-        seenDirectives = schemaDirectives;
-      } else if (isTypeDefinitionNode(node) || isTypeExtensionNode(node)) {
-        var typeName = node.name.value;
-        seenDirectives = typeDirectivesMap[typeName];
-
-        if (seenDirectives === undefined) {
-          typeDirectivesMap[typeName] = seenDirectives = Object.create(null);
+    const astDefinitions = context.getDocument().definitions;
+    for (const def of astDefinitions) {
+        if (def.kind === Kind.DIRECTIVE_DEFINITION) {
+            uniqueDirectiveMap.set(def.name.value, !def.repeatable);
         }
-      } else {
-        seenDirectives = Object.create(null);
-      }
-
-      for (var _i6 = 0, _node$directives2 = node.directives; _i6 < _node$directives2.length; _i6++) {
-        var _directive = _node$directives2[_i6];
-        var directiveName = _directive.name.value;
-
-        if (uniqueDirectiveMap[directiveName]) {
-          if (seenDirectives[directiveName]) {
-            context.reportError(new GraphQLError("The directive \"@".concat(directiveName, "\" can only be used once at this location."), [seenDirectives[directiveName], _directive]));
-          } else {
-            seenDirectives[directiveName] = _directive;
-          }
-        }
-      }
     }
-  };
+    const schemaDirectives = new Map();
+    const typeDirectivesMap = new Map();
+    const directiveDirectivesMap = new Map();
+    return {
+        enter(node) {
+            if (!('directives' in node) || !node.directives) {
+                return;
+            }
+            let seenDirectives;
+            if (node.kind === Kind.SCHEMA_DEFINITION ||
+                node.kind === Kind.SCHEMA_EXTENSION) {
+                seenDirectives = schemaDirectives;
+            }
+            else if (isTypeDefinitionNode(node) || isTypeExtensionNode(node)) {
+                const typeName = node.name.value;
+                seenDirectives = typeDirectivesMap.get(typeName);
+                if (seenDirectives === undefined) {
+                    seenDirectives = new Map();
+                    typeDirectivesMap.set(typeName, seenDirectives);
+                }
+            }
+            else if (node.kind === Kind.DIRECTIVE_DEFINITION ||
+                node.kind === Kind.DIRECTIVE_EXTENSION) {
+                const directiveName = node.name.value;
+                seenDirectives = directiveDirectivesMap.get(directiveName);
+                if (seenDirectives === undefined) {
+                    seenDirectives = new Map();
+                    directiveDirectivesMap.set(directiveName, seenDirectives);
+                }
+            }
+            else {
+                seenDirectives = new Map();
+            }
+            for (const directive of node.directives) {
+                const directiveName = directive.name.value;
+                if (uniqueDirectiveMap.get(directiveName) === true) {
+                    const seenDirective = seenDirectives.get(directiveName);
+                    if (seenDirective != null) {
+                        context.reportError(new GraphQLError(`The directive "@${directiveName}" can only be used once at this location.`, { nodes: [seenDirective, directive] }));
+                    }
+                    else {
+                        seenDirectives.set(directiveName, directive);
+                    }
+                }
+            }
+        },
+    };
 }
+//# sourceMappingURL=UniqueDirectivesPerLocationRule.js.map

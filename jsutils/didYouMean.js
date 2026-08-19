@@ -1,42 +1,20 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = didYouMean;
-var MAX_SUGGESTIONS = 5;
-/**
- * Given [ A, B, C ] return ' Did you mean A, B, or C?'.
- */
-
-// eslint-disable-next-line no-redeclare
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.didYouMean = didYouMean;
+const formatList_ts_1 = require("./formatList.js");
+const MAX_SUGGESTIONS = 5;
 function didYouMean(firstArg, secondArg) {
-  var _ref = typeof firstArg === 'string' ? [firstArg, secondArg] : [undefined, firstArg],
-      subMessage = _ref[0],
-      suggestionsArg = _ref[1];
-
-  var message = ' Did you mean ';
-
-  if (subMessage) {
-    message += subMessage + ' ';
-  }
-
-  var suggestions = suggestionsArg.map(function (x) {
-    return "\"".concat(x, "\"");
-  });
-
-  switch (suggestions.length) {
-    case 0:
-      return '';
-
-    case 1:
-      return message + suggestions[0] + '?';
-
-    case 2:
-      return message + suggestions[0] + ' or ' + suggestions[1] + '?';
-  }
-
-  var selected = suggestions.slice(0, MAX_SUGGESTIONS);
-  var lastItem = selected.pop();
-  return message + selected.join(', ') + ', or ' + lastItem + '?';
+    const [subMessage, suggestions] = secondArg
+        ? [firstArg, secondArg]
+        : [undefined, firstArg];
+    if (suggestions.length === 0) {
+        return '';
+    }
+    let message = ' Did you mean ';
+    if (subMessage != null) {
+        message += subMessage + ' ';
+    }
+    const suggestionList = (0, formatList_ts_1.orList)(suggestions.slice(0, MAX_SUGGESTIONS).map((x) => `"${x}"`));
+    return message + suggestionList + '?';
 }
+//# sourceMappingURL=didYouMean.js.map

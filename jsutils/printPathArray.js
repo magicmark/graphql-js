@@ -1,15 +1,12 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = printPathArray;
-
-/**
- * Build a string describing the path.
- */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.printPathArray = printPathArray;
 function printPathArray(path) {
-  return path.map(function (key) {
-    return typeof key === 'number' ? '[' + key.toString() + ']' : '.' + key;
-  }).join('');
+    if (path.length === 0) {
+        return '';
+    }
+    return ` at ${path
+        .map((key) => (typeof key === 'number' ? `[${key}]` : `.${key}`))
+        .join('')}`;
 }
+//# sourceMappingURL=printPathArray.js.map

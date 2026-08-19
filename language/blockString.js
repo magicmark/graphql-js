@@ -1,112 +1,114 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.dedentBlockStringValue = dedentBlockStringValue;
-exports.getBlockStringIndentation = getBlockStringIndentation;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dedentBlockStringLines = dedentBlockStringLines;
+exports.isPrintableAsBlockString = isPrintableAsBlockString;
 exports.printBlockString = printBlockString;
-
-/**
- * Produces the value of a block string from its parsed raw value, similar to
- * CoffeeScript's block string, Python's docstring trim or Ruby's strip_heredoc.
- *
- * This implements the GraphQL spec's BlockStringValue() static algorithm.
- *
- * @internal
- */
-function dedentBlockStringValue(rawString) {
-  // Expand a block string's raw value into independent lines.
-  var lines = rawString.split(/\r\n|[\n\r]/g); // Remove common indentation from all lines but first.
-
-  var commonIndent = getBlockStringIndentation(lines);
-
-  if (commonIndent !== 0) {
-    for (var i = 1; i < lines.length; i++) {
-      lines[i] = lines[i].slice(commonIndent);
+const characterClasses_ts_1 = require("./characterClasses.js");
+function dedentBlockStringLines(lines) {
+    let commonIndent = Number.MAX_SAFE_INTEGER;
+    let firstNonEmptyLine = null;
+    let lastNonEmptyLine = -1;
+    for (let i = 0; i < lines.length; ++i) {
+        const line = lines[i];
+        const indent = leadingWhitespace(line);
+        if (indent === line.length) {
+            continue;
+        }
+        firstNonEmptyLine ??= i;
+        lastNonEmptyLine = i;
+        if (i !== 0 && indent < commonIndent) {
+            commonIndent = indent;
+        }
     }
-  } // Remove leading and trailing blank lines.
-
-
-  while (lines.length > 0 && isBlank(lines[0])) {
-    lines.shift();
-  }
-
-  while (lines.length > 0 && isBlank(lines[lines.length - 1])) {
-    lines.pop();
-  } // Return a string of the lines joined with U+000A.
-
-
-  return lines.join('\n');
+    return (lines
+        .map((line, i) => (i === 0 ? line : line.slice(commonIndent)))
+        .slice(firstNonEmptyLine ?? 0, lastNonEmptyLine + 1));
 }
-/**
- * @internal
- */
-
-
-function getBlockStringIndentation(lines) {
-  var commonIndent = null;
-
-  for (var i = 1; i < lines.length; i++) {
-    var line = lines[i];
-    var indent = leadingWhitespace(line);
-
-    if (indent === line.length) {
-      continue; // skip empty lines
-    }
-
-    if (commonIndent === null || indent < commonIndent) {
-      commonIndent = indent;
-
-      if (commonIndent === 0) {
-        break;
-      }
-    }
-  }
-
-  return commonIndent === null ? 0 : commonIndent;
-}
-
 function leadingWhitespace(str) {
-  var i = 0;
-
-  while (i < str.length && (str[i] === ' ' || str[i] === '\t')) {
-    i++;
-  }
-
-  return i;
+    let i = 0;
+    while (i < str.length && (0, characterClasses_ts_1.isWhiteSpace)(str.charCodeAt(i))) {
+        ++i;
+    }
+    return i;
 }
-
-function isBlank(str) {
-  return leadingWhitespace(str) === str.length;
+function isPrintableAsBlockString(value) {
+    if (value === '') {
+        return true;
+    }
+    let isEmptyLine = true;
+    let hasIndent = false;
+    let hasCommonIndent = true;
+    let seenNonEmptyLine = false;
+    for (let i = 0; i < value.length; ++i) {
+        switch (value.codePointAt(i)) {
+            case 0x0000:
+            case 0x0001:
+            case 0x0002:
+            case 0x0003:
+            case 0x0004:
+            case 0x0005:
+            case 0x0006:
+            case 0x0007:
+            case 0x0008:
+            case 0x000b:
+            case 0x000c:
+            case 0x000e:
+            case 0x000f:
+                return false;
+            case 0x000d:
+                return false;
+            case 10:
+                if (isEmptyLine && !seenNonEmptyLine) {
+                    return false;
+                }
+                seenNonEmptyLine = true;
+                isEmptyLine = true;
+                hasIndent = false;
+                break;
+            case 9:
+            case 32:
+                hasIndent ||= isEmptyLine;
+                break;
+            default:
+                hasCommonIndent &&= hasIndent;
+                isEmptyLine = false;
+        }
+    }
+    if (isEmptyLine) {
+        return false;
+    }
+    if (hasCommonIndent && seenNonEmptyLine) {
+        return false;
+    }
+    return true;
 }
-/**
- * Print a block string in the indented block form by adding a leading and
- * trailing blank line. However, if a block string starts with whitespace and is
- * a single-line, adding a leading blank line would strip that whitespace.
- *
- * @internal
- */
-
-
-function printBlockString(value) {
-  var indentation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-  var preferMultipleLines = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-  var isSingleLine = value.indexOf('\n') === -1;
-  var hasLeadingSpace = value[0] === ' ' || value[0] === '\t';
-  var hasTrailingQuote = value[value.length - 1] === '"';
-  var printAsMultipleLines = !isSingleLine || hasTrailingQuote || preferMultipleLines;
-  var result = ''; // Format a multi-line block quote to account for leading space.
-
-  if (printAsMultipleLines && !(isSingleLine && hasLeadingSpace)) {
-    result += '\n' + indentation;
-  }
-
-  result += indentation ? value.replace(/\n/g, '\n' + indentation) : value;
-
-  if (printAsMultipleLines) {
-    result += '\n';
-  }
-
-  return '"""' + result.replace(/"""/g, '\\"""') + '"""';
+function printBlockString(value, options) {
+    const escapedValue = value.replaceAll('"""', '\\"""');
+    const lines = escapedValue.split(/\r\n|[\n\r]/g);
+    const isSingleLine = lines.length === 1;
+    const forceLeadingNewLine = lines.length > 1 &&
+        lines
+            .slice(1)
+            .every((line) => line.length === 0 || (0, characterClasses_ts_1.isWhiteSpace)(line.charCodeAt(0)));
+    const hasTrailingTripleQuotes = escapedValue.endsWith('\\"""');
+    const hasTrailingQuote = value.endsWith('"') && !hasTrailingTripleQuotes;
+    const hasTrailingSlash = value.endsWith('\\');
+    const forceTrailingNewline = hasTrailingQuote || hasTrailingSlash;
+    const printAsMultipleLines = !options?.minimize &&
+        (!isSingleLine ||
+            value.length > 70 ||
+            forceTrailingNewline ||
+            forceLeadingNewLine ||
+            hasTrailingTripleQuotes);
+    let result = '';
+    const skipLeadingNewLine = isSingleLine && (0, characterClasses_ts_1.isWhiteSpace)(value.charCodeAt(0));
+    if ((printAsMultipleLines && !skipLeadingNewLine) || forceLeadingNewLine) {
+        result += '\n';
+    }
+    result += escapedValue;
+    if (printAsMultipleLines || forceTrailingNewline) {
+        result += '\n';
+    }
+    return '"""' + result + '"""';
 }
+//# sourceMappingURL=blockString.js.map

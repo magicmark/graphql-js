@@ -1,35 +1,25 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExecutableDefinitionsRule = ExecutableDefinitionsRule;
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-var _kinds = require("../../language/kinds");
-
-var _predicates = require("../../language/predicates");
-
-/**
- * Executable definitions
- *
- * A GraphQL document is only valid for execution if all definitions are either
- * operation or fragment definitions.
- */
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
+const kinds_ts_1 = require("../../language/kinds.js");
+const predicates_ts_1 = require("../../language/predicates.js");
 function ExecutableDefinitionsRule(context) {
-  return {
-    Document: function Document(node) {
-      for (var _i2 = 0, _node$definitions2 = node.definitions; _i2 < _node$definitions2.length; _i2++) {
-        var definition = _node$definitions2[_i2];
-
-        if (!(0, _predicates.isExecutableDefinitionNode)(definition)) {
-          var defName = definition.kind === _kinds.Kind.SCHEMA_DEFINITION || definition.kind === _kinds.Kind.SCHEMA_EXTENSION ? 'schema' : '"' + definition.name.value + '"';
-          context.reportError(new _GraphQLError.GraphQLError("The ".concat(defName, " definition is not executable."), definition));
-        }
-      }
-
-      return false;
-    }
-  };
+    return {
+        Document(node) {
+            for (const definition of node.definitions) {
+                if (!(0, predicates_ts_1.isExecutableDefinitionNode)(definition)) {
+                    const defName = definition.kind === kinds_ts_1.Kind.SCHEMA_DEFINITION ||
+                        definition.kind === kinds_ts_1.Kind.SCHEMA_EXTENSION
+                        ? 'schema'
+                        : '"' + definition.name.value + '"';
+                    context.reportError(new GraphQLError_ts_1.GraphQLError(`The ${defName} definition is not executable.`, {
+                        nodes: definition,
+                    }));
+                }
+            }
+            return false;
+        },
+    };
 }
+//# sourceMappingURL=ExecutableDefinitionsRule.js.map

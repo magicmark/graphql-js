@@ -1,31 +1,20 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLocation = getLocation;
-
-/**
- * Represents a location in a Source.
- */
-
-/**
- * Takes a Source and a UTF-8 character offset, and returns the corresponding
- * line and column as a SourceLocation.
- */
+const invariant_ts_1 = require("../jsutils/invariant.js");
+const LineRegExp = /\r\n|[\n\r]/g;
 function getLocation(source, position) {
-  var lineRegexp = /\r\n|[\n\r]/g;
-  var line = 1;
-  var column = position + 1;
-  var match;
-
-  while ((match = lineRegexp.exec(source.body)) && match.index < position) {
-    line += 1;
-    column = position + 1 - (match.index + match[0].length);
-  }
-
-  return {
-    line: line,
-    column: column
-  };
+    let lastLineStart = 0;
+    let line = 1;
+    for (const match of source.body.matchAll(LineRegExp)) {
+        if (!(typeof match.index === 'number'))
+            (0, invariant_ts_1.invariant)(false);
+        if (match.index >= position) {
+            break;
+        }
+        lastLineStart = match.index + match[0].length;
+        line += 1;
+    }
+    return { line, column: position + 1 - lastLineStart };
 }
+//# sourceMappingURL=location.js.map

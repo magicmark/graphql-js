@@ -1,63 +1,45 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.PossibleFragmentSpreadsRule = PossibleFragmentSpreadsRule;
-
-var _inspect = _interopRequireDefault(require("../../jsutils/inspect"));
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-var _definition = require("../../type/definition");
-
-var _typeFromAST = require("../../utilities/typeFromAST");
-
-var _typeComparators = require("../../utilities/typeComparators");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Possible fragment spread
- *
- * A fragment spread is only valid if the type condition could ever possibly
- * be true: if there is a non-empty intersection of the possible parent types,
- * and possible types which pass the type condition.
- */
+const inspect_ts_1 = require("../../jsutils/inspect.js");
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
+const definition_ts_1 = require("../../type/definition.js");
+const typeComparators_ts_1 = require("../../utilities/typeComparators.js");
+const typeFromAST_ts_1 = require("../../utilities/typeFromAST.js");
 function PossibleFragmentSpreadsRule(context) {
-  return {
-    InlineFragment: function InlineFragment(node) {
-      var fragType = context.getType();
-      var parentType = context.getParentType();
-
-      if ((0, _definition.isCompositeType)(fragType) && (0, _definition.isCompositeType)(parentType) && !(0, _typeComparators.doTypesOverlap)(context.getSchema(), fragType, parentType)) {
-        var parentTypeStr = (0, _inspect.default)(parentType);
-        var fragTypeStr = (0, _inspect.default)(fragType);
-        context.reportError(new _GraphQLError.GraphQLError("Fragment cannot be spread here as objects of type \"".concat(parentTypeStr, "\" can never be of type \"").concat(fragTypeStr, "\"."), node));
-      }
-    },
-    FragmentSpread: function FragmentSpread(node) {
-      var fragName = node.name.value;
-      var fragType = getFragmentType(context, fragName);
-      var parentType = context.getParentType();
-
-      if (fragType && parentType && !(0, _typeComparators.doTypesOverlap)(context.getSchema(), fragType, parentType)) {
-        var parentTypeStr = (0, _inspect.default)(parentType);
-        var fragTypeStr = (0, _inspect.default)(fragType);
-        context.reportError(new _GraphQLError.GraphQLError("Fragment \"".concat(fragName, "\" cannot be spread here as objects of type \"").concat(parentTypeStr, "\" can never be of type \"").concat(fragTypeStr, "\"."), node));
-      }
-    }
-  };
+    return {
+        InlineFragment(node) {
+            const fragType = context.getType();
+            const parentType = context.getParentType();
+            if ((0, definition_ts_1.isCompositeType)(fragType) &&
+                (0, definition_ts_1.isCompositeType)(parentType) &&
+                !(0, typeComparators_ts_1.doTypesOverlap)(context.getSchema(), fragType, parentType)) {
+                const parentTypeStr = (0, inspect_ts_1.inspect)(parentType);
+                const fragTypeStr = (0, inspect_ts_1.inspect)(fragType);
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`Fragment cannot be spread here as objects of type "${parentTypeStr}" can never be of type "${fragTypeStr}".`, { nodes: node }));
+            }
+        },
+        FragmentSpread(node) {
+            const fragName = node.name.value;
+            const fragType = getFragmentType(context, fragName);
+            const parentType = context.getParentType();
+            if (fragType &&
+                parentType &&
+                !(0, typeComparators_ts_1.doTypesOverlap)(context.getSchema(), fragType, parentType)) {
+                const parentTypeStr = (0, inspect_ts_1.inspect)(parentType);
+                const fragTypeStr = (0, inspect_ts_1.inspect)(fragType);
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`Fragment "${fragName}" cannot be spread here as objects of type "${parentTypeStr}" can never be of type "${fragTypeStr}".`, { nodes: node }));
+            }
+        },
+    };
 }
-
 function getFragmentType(context, name) {
-  var frag = context.getFragment(name);
-
-  if (frag) {
-    var type = (0, _typeFromAST.typeFromAST)(context.getSchema(), frag.typeCondition);
-
-    if ((0, _definition.isCompositeType)(type)) {
-      return type;
+    const frag = context.getFragment(name);
+    if (frag) {
+        const type = (0, typeFromAST_ts_1.typeFromAST)(context.getSchema(), frag.typeCondition);
+        if ((0, definition_ts_1.isCompositeType)(type)) {
+            return type;
+        }
     }
-  }
 }
+//# sourceMappingURL=PossibleFragmentSpreadsRule.js.map

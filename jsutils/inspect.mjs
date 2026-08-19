@@ -1,124 +1,87 @@
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-import nodejsCustomInspectSymbol from "./nodejsCustomInspectSymbol.mjs";
-var MAX_ARRAY_LENGTH = 10;
-var MAX_RECURSIVE_DEPTH = 2;
-/**
- * Used to print values in error messages.
- */
-
-export default function inspect(value) {
-  return formatValue(value, []);
+const MAX_ARRAY_LENGTH = 10;
+const MAX_RECURSIVE_DEPTH = 2;
+export function inspect(value) {
+    return formatValue(value, []);
 }
-
 function formatValue(value, seenValues) {
-  switch (_typeof(value)) {
-    case 'string':
-      return JSON.stringify(value);
-
-    case 'function':
-      return value.name ? "[function ".concat(value.name, "]") : '[function]';
-
-    case 'object':
-      if (value === null) {
-        return 'null';
-      }
-
-      return formatObjectValue(value, seenValues);
-
-    default:
-      return String(value);
-  }
+    switch (typeof value) {
+        case 'string':
+            return JSON.stringify(value);
+        case 'function':
+            return value.name ? `[function ${value.name}]` : '[function]';
+        case 'object':
+            return formatObjectValue(value, seenValues);
+        default:
+            return String(value);
+    }
 }
-
 function formatObjectValue(value, previouslySeenValues) {
-  if (previouslySeenValues.indexOf(value) !== -1) {
-    return '[Circular]';
-  }
-
-  var seenValues = [].concat(previouslySeenValues, [value]);
-  var customInspectFn = getCustomFn(value);
-
-  if (customInspectFn !== undefined) {
-    // $FlowFixMe(>=0.90.0)
-    var customValue = customInspectFn.call(value); // check for infinite recursion
-
-    if (customValue !== value) {
-      return typeof customValue === 'string' ? customValue : formatValue(customValue, seenValues);
+    if (value === null) {
+        return 'null';
     }
-  } else if (Array.isArray(value)) {
-    return formatArray(value, seenValues);
-  }
-
-  return formatObject(value, seenValues);
+    if (previouslySeenValues.includes(value)) {
+        return '[Circular]';
+    }
+    const seenValues = [...previouslySeenValues, value];
+    if (isJSONable(value)) {
+        const jsonValue = value.toJSON();
+        if (jsonValue !== value) {
+            return typeof jsonValue === 'string'
+                ? jsonValue
+                : formatValue(jsonValue, seenValues);
+        }
+    }
+    else if (Array.isArray(value)) {
+        return formatArray(value, seenValues);
+    }
+    return formatObject(value, seenValues);
 }
-
+function isJSONable(value) {
+    return typeof value.toJSON === 'function';
+}
 function formatObject(object, seenValues) {
-  var keys = Object.keys(object);
-
-  if (keys.length === 0) {
-    return '{}';
-  }
-
-  if (seenValues.length > MAX_RECURSIVE_DEPTH) {
-    return '[' + getObjectTag(object) + ']';
-  }
-
-  var properties = keys.map(function (key) {
-    var value = formatValue(object[key], seenValues);
-    return key + ': ' + value;
-  });
-  return '{ ' + properties.join(', ') + ' }';
-}
-
-function formatArray(array, seenValues) {
-  if (array.length === 0) {
-    return '[]';
-  }
-
-  if (seenValues.length > MAX_RECURSIVE_DEPTH) {
-    return '[Array]';
-  }
-
-  var len = Math.min(MAX_ARRAY_LENGTH, array.length);
-  var remaining = array.length - len;
-  var items = [];
-
-  for (var i = 0; i < len; ++i) {
-    items.push(formatValue(array[i], seenValues));
-  }
-
-  if (remaining === 1) {
-    items.push('... 1 more item');
-  } else if (remaining > 1) {
-    items.push("... ".concat(remaining, " more items"));
-  }
-
-  return '[' + items.join(', ') + ']';
-}
-
-function getCustomFn(object) {
-  var customInspectFn = object[String(nodejsCustomInspectSymbol)];
-
-  if (typeof customInspectFn === 'function') {
-    return customInspectFn;
-  }
-
-  if (typeof object.inspect === 'function') {
-    return object.inspect;
-  }
-}
-
-function getObjectTag(object) {
-  var tag = Object.prototype.toString.call(object).replace(/^\[object /, '').replace(/]$/, '');
-
-  if (tag === 'Object' && typeof object.constructor === 'function') {
-    var name = object.constructor.name;
-
-    if (typeof name === 'string' && name !== '') {
-      return name;
+    const entries = Object.entries(object);
+    if (entries.length === 0) {
+        return '{}';
     }
-  }
-
-  return tag;
+    if (seenValues.length > MAX_RECURSIVE_DEPTH) {
+        return '[' + getObjectTag(object) + ']';
+    }
+    const properties = entries.map(([key, value]) => key + ': ' + formatValue(value, seenValues));
+    return '{ ' + properties.join(', ') + ' }';
 }
+function formatArray(array, seenValues) {
+    if (array.length === 0) {
+        return '[]';
+    }
+    if (seenValues.length > MAX_RECURSIVE_DEPTH) {
+        return '[Array]';
+    }
+    const len = Math.min(MAX_ARRAY_LENGTH, array.length);
+    const remaining = array.length - len;
+    const items = [];
+    for (let i = 0; i < len; ++i) {
+        items.push(formatValue(array[i], seenValues));
+    }
+    if (remaining === 1) {
+        items.push('... 1 more item');
+    }
+    else if (remaining > 1) {
+        items.push(`... ${remaining} more items`);
+    }
+    return '[' + items.join(', ') + ']';
+}
+function getObjectTag(object) {
+    const tag = Object.prototype.toString
+        .call(object)
+        .replace(/^\[object /, '')
+        .replace(/]$/, '');
+    if (tag === 'Object' && typeof object.constructor === 'function') {
+        const name = object.constructor.name;
+        if (typeof name === 'string' && name !== '') {
+            return name;
+        }
+    }
+    return tag;
+}
+//# sourceMappingURL=inspect.js.map

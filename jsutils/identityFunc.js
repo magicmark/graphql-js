@@ -1,13 +1,7 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = identityFunc;
-
-/**
- * Returns the first argument it receives.
- */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.identityFunc = identityFunc;
 function identityFunc(x) {
-  return x;
+    return x;
 }
+//# sourceMappingURL=identityFunc.js.map

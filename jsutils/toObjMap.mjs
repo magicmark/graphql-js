@@ -1,18 +1,30 @@
-import objectEntries from "../polyfills/objectEntries.mjs";
-export default function toObjMap(obj) {
-  /* eslint-enable no-redeclare */
-  if (Object.getPrototypeOf(obj) === null) {
-    return obj;
-  }
-
-  var map = Object.create(null);
-
-  for (var _i2 = 0, _objectEntries2 = objectEntries(obj); _i2 < _objectEntries2.length; _i2++) {
-    var _ref2 = _objectEntries2[_i2];
-    var key = _ref2[0];
-    var value = _ref2[1];
-    map[key] = value;
-  }
-
-  return map;
+export function toObjMap(obj) {
+    if (obj == null) {
+        return Object.create(null);
+    }
+    if (Object.getPrototypeOf(obj) === null) {
+        return obj;
+    }
+    const map = Object.create(null);
+    for (const [key, value] of Object.entries(obj)) {
+        map[key] = value;
+    }
+    return map;
 }
+export function toObjMapWithSymbols(obj) {
+    if (obj == null) {
+        return Object.create(null);
+    }
+    if (Object.getPrototypeOf(obj) === null) {
+        return obj;
+    }
+    const map = Object.create(null);
+    for (const [key, value] of Object.entries(obj)) {
+        map[key] = value;
+    }
+    for (const key of Object.getOwnPropertySymbols(obj)) {
+        map[key] = obj[key];
+    }
+    return map;
+}
+//# sourceMappingURL=toObjMap.js.map

@@ -1,33 +1,22 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.UniqueFragmentNamesRule = UniqueFragmentNamesRule;
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-/**
- * Unique fragment names
- *
- * A GraphQL document is only valid if all defined fragments have unique names.
- */
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
 function UniqueFragmentNamesRule(context) {
-  var knownFragmentNames = Object.create(null);
-  return {
-    OperationDefinition: function OperationDefinition() {
-      return false;
-    },
-    FragmentDefinition: function FragmentDefinition(node) {
-      var fragmentName = node.name.value;
-
-      if (knownFragmentNames[fragmentName]) {
-        context.reportError(new _GraphQLError.GraphQLError("There can be only one fragment named \"".concat(fragmentName, "\"."), [knownFragmentNames[fragmentName], node.name]));
-      } else {
-        knownFragmentNames[fragmentName] = node.name;
-      }
-
-      return false;
-    }
-  };
+    const knownFragmentNames = new Map();
+    return {
+        OperationDefinition: () => false,
+        FragmentDefinition(node) {
+            const fragmentName = node.name.value;
+            const knownFragmentName = knownFragmentNames.get(fragmentName);
+            if (knownFragmentName != null) {
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`There can be only one fragment named "${fragmentName}".`, { nodes: [knownFragmentName, node.name] }));
+            }
+            else {
+                knownFragmentNames.set(fragmentName, node.name);
+            }
+            return false;
+        },
+    };
 }
+//# sourceMappingURL=UniqueFragmentNamesRule.js.map

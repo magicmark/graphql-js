@@ -1,37 +1,21 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.UniqueArgumentNamesRule = UniqueArgumentNamesRule;
-
-var _GraphQLError = require("../../error/GraphQLError");
-
-/**
- * Unique argument names
- *
- * A GraphQL field or directive is only valid if all supplied arguments are
- * uniquely named.
- */
+const groupBy_ts_1 = require("../../jsutils/groupBy.js");
+const GraphQLError_ts_1 = require("../../error/GraphQLError.js");
 function UniqueArgumentNamesRule(context) {
-  var knownArgNames = Object.create(null);
-  return {
-    Field: function Field() {
-      knownArgNames = Object.create(null);
-    },
-    Directive: function Directive() {
-      knownArgNames = Object.create(null);
-    },
-    Argument: function Argument(node) {
-      var argName = node.name.value;
-
-      if (knownArgNames[argName]) {
-        context.reportError(new _GraphQLError.GraphQLError("There can be only one argument named \"".concat(argName, "\"."), [knownArgNames[argName], node.name]));
-      } else {
-        knownArgNames[argName] = node.name;
-      }
-
-      return false;
+    return {
+        Field: checkArgUniqueness,
+        Directive: checkArgUniqueness,
+    };
+    function checkArgUniqueness(parentNode) {
+        const argumentNodes = parentNode.arguments ?? [];
+        const seenArgs = (0, groupBy_ts_1.groupBy)(argumentNodes, (arg) => arg.name.value);
+        for (const [argName, argNodes] of seenArgs) {
+            if (argNodes.length > 1) {
+                context.reportError(new GraphQLError_ts_1.GraphQLError(`There can be only one argument named "${argName}".`, { nodes: argNodes.map((node) => node.name) }));
+            }
+        }
     }
-  };
 }
+//# sourceMappingURL=UniqueArgumentNamesRule.js.map

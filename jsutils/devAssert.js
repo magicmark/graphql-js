@@ -1,15 +1,9 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = devAssert;
-
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.devAssert = devAssert;
 function devAssert(condition, message) {
-  var booleanCondition = Boolean(condition);
-  /* istanbul ignore else (see transformation done in './resources/inlineInvariant.js') */
-
-  if (!booleanCondition) {
-    throw new Error(message);
-  }
+    if (!condition) {
+        throw new Error(message);
+    }
 }
+//# sourceMappingURL=devAssert.js.map

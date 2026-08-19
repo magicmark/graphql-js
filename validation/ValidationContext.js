@@ -1,253 +1,201 @@
 "use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidationContext = exports.SDLValidationContext = exports.ASTValidationContext = void 0;
-
-var _kinds = require("../language/kinds");
-
-var _visitor = require("../language/visitor");
-
-var _TypeInfo = require("../utilities/TypeInfo");
-
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _createSuper(Derived) { return function () { var Super = _getPrototypeOf(Derived), result; if (_isNativeReflectConstruct()) { var NewTarget = _getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return _possibleConstructorReturn(this, result); }; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _isNativeReflectConstruct() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inheritsLoose(subClass, superClass) { subClass.prototype = Object.create(superClass.prototype); subClass.prototype.constructor = subClass; subClass.__proto__ = superClass; }
-
-/**
- * An instance of this class is passed as the "this" context to all validators,
- * allowing access to commonly useful contextual information from within a
- * validation rule.
- */
-var ASTValidationContext = /*#__PURE__*/function () {
-  function ASTValidationContext(ast, onError) {
-    this._ast = ast;
-    this._fragments = undefined;
-    this._fragmentSpreads = new Map();
-    this._recursivelyReferencedFragments = new Map();
-    this._onError = onError;
-  }
-
-  var _proto = ASTValidationContext.prototype;
-
-  _proto.reportError = function reportError(error) {
-    this._onError(error);
-  };
-
-  _proto.getDocument = function getDocument() {
-    return this._ast;
-  };
-
-  _proto.getFragment = function getFragment(name) {
-    var fragments = this._fragments;
-
-    if (!fragments) {
-      this._fragments = fragments = this.getDocument().definitions.reduce(function (frags, statement) {
-        if (statement.kind === _kinds.Kind.FRAGMENT_DEFINITION) {
-          frags[statement.name.value] = statement;
-        }
-
-        return frags;
-      }, Object.create(null));
+const kinds_ts_1 = require("../language/kinds.js");
+const visitor_ts_1 = require("../language/visitor.js");
+const TypeInfo_ts_1 = require("../utilities/TypeInfo.js");
+class ASTValidationContext {
+    constructor(ast, onError) {
+        this._ast = ast;
+        this._fragments = undefined;
+        this._fragmentSpreads = new Map();
+        this._recursivelyReferencedFragments = new Map();
+        this._onError = onError;
     }
-
-    return fragments[name];
-  };
-
-  _proto.getFragmentSpreads = function getFragmentSpreads(node) {
-    var spreads = this._fragmentSpreads.get(node);
-
-    if (!spreads) {
-      spreads = [];
-      var setsToVisit = [node];
-
-      while (setsToVisit.length !== 0) {
-        var set = setsToVisit.pop();
-
-        for (var _i2 = 0, _set$selections2 = set.selections; _i2 < _set$selections2.length; _i2++) {
-          var selection = _set$selections2[_i2];
-
-          if (selection.kind === _kinds.Kind.FRAGMENT_SPREAD) {
-            spreads.push(selection);
-          } else if (selection.selectionSet) {
-            setsToVisit.push(selection.selectionSet);
-          }
-        }
-      }
-
-      this._fragmentSpreads.set(node, spreads);
+    get [Symbol.toStringTag]() {
+        return 'ASTValidationContext';
     }
-
-    return spreads;
-  };
-
-  _proto.getRecursivelyReferencedFragments = function getRecursivelyReferencedFragments(operation) {
-    var fragments = this._recursivelyReferencedFragments.get(operation);
-
-    if (!fragments) {
-      fragments = [];
-      var collectedNames = Object.create(null);
-      var nodesToVisit = [operation.selectionSet];
-
-      while (nodesToVisit.length !== 0) {
-        var node = nodesToVisit.pop();
-
-        for (var _i4 = 0, _this$getFragmentSpre2 = this.getFragmentSpreads(node); _i4 < _this$getFragmentSpre2.length; _i4++) {
-          var spread = _this$getFragmentSpre2[_i4];
-          var fragName = spread.name.value;
-
-          if (collectedNames[fragName] !== true) {
-            collectedNames[fragName] = true;
-            var fragment = this.getFragment(fragName);
-
-            if (fragment) {
-              fragments.push(fragment);
-              nodesToVisit.push(fragment.selectionSet);
+    reportError(error) {
+        this._onError(error);
+    }
+    getDocument() {
+        return this._ast;
+    }
+    getFragment(name) {
+        let fragments;
+        if (this._fragments) {
+            fragments = this._fragments;
+        }
+        else {
+            fragments = Object.create(null);
+            for (const defNode of this.getDocument().definitions) {
+                if (defNode.kind === kinds_ts_1.Kind.FRAGMENT_DEFINITION) {
+                    fragments[defNode.name.value] = defNode;
+                }
             }
-          }
+            this._fragments = fragments;
         }
-      }
-
-      this._recursivelyReferencedFragments.set(operation, fragments);
+        return fragments[name];
     }
-
-    return fragments;
-  };
-
-  return ASTValidationContext;
-}();
-
+    getFragmentSpreads(node) {
+        let spreads = this._fragmentSpreads.get(node);
+        if (!spreads) {
+            spreads = [];
+            const setsToVisit = [node];
+            let set;
+            while ((set = setsToVisit.pop())) {
+                for (const selection of set.selections) {
+                    if (selection.kind === kinds_ts_1.Kind.FRAGMENT_SPREAD) {
+                        spreads.push(selection);
+                    }
+                    else if (selection.selectionSet) {
+                        setsToVisit.push(selection.selectionSet);
+                    }
+                }
+            }
+            this._fragmentSpreads.set(node, spreads);
+        }
+        return spreads;
+    }
+    getRecursivelyReferencedFragments(operation) {
+        let fragments = this._recursivelyReferencedFragments.get(operation);
+        if (!fragments) {
+            fragments = [];
+            const collectedNames = new Set();
+            const nodesToVisit = [operation.selectionSet];
+            let node;
+            while ((node = nodesToVisit.pop())) {
+                for (const spread of this.getFragmentSpreads(node)) {
+                    const fragName = spread.name.value;
+                    if (!collectedNames.has(fragName)) {
+                        collectedNames.add(fragName);
+                        const fragment = this.getFragment(fragName);
+                        if (fragment) {
+                            fragments.push(fragment);
+                            nodesToVisit.push(fragment.selectionSet);
+                        }
+                    }
+                }
+            }
+            this._recursivelyReferencedFragments.set(operation, fragments);
+        }
+        return fragments;
+    }
+}
 exports.ASTValidationContext = ASTValidationContext;
-
-var SDLValidationContext = /*#__PURE__*/function (_ASTValidationContext) {
-  _inheritsLoose(SDLValidationContext, _ASTValidationContext);
-
-  var _super = _createSuper(SDLValidationContext);
-
-  function SDLValidationContext(ast, schema, onError) {
-    var _this;
-
-    _this = _ASTValidationContext.call(this, ast, onError) || this;
-    _this._schema = schema;
-    return _this;
-  }
-
-  var _proto2 = SDLValidationContext.prototype;
-
-  _proto2.getSchema = function getSchema() {
-    return this._schema;
-  };
-
-  return SDLValidationContext;
-}(ASTValidationContext);
-
+class SDLValidationContext extends ASTValidationContext {
+    constructor(ast, schema, onError) {
+        super(ast, onError);
+        this._schema = schema;
+    }
+    get hideSuggestions() {
+        return false;
+    }
+    get [Symbol.toStringTag]() {
+        return 'SDLValidationContext';
+    }
+    getSchema() {
+        return this._schema;
+    }
+}
 exports.SDLValidationContext = SDLValidationContext;
-
-var ValidationContext = /*#__PURE__*/function (_ASTValidationContext2) {
-  _inheritsLoose(ValidationContext, _ASTValidationContext2);
-
-  var _super2 = _createSuper(ValidationContext);
-
-  function ValidationContext(schema, ast, typeInfo, onError) {
-    var _this2;
-
-    _this2 = _ASTValidationContext2.call(this, ast, onError) || this;
-    _this2._schema = schema;
-    _this2._typeInfo = typeInfo;
-    _this2._variableUsages = new Map();
-    _this2._recursiveVariableUsages = new Map();
-    return _this2;
-  }
-
-  var _proto3 = ValidationContext.prototype;
-
-  _proto3.getSchema = function getSchema() {
-    return this._schema;
-  };
-
-  _proto3.getVariableUsages = function getVariableUsages(node) {
-    var usages = this._variableUsages.get(node);
-
-    if (!usages) {
-      var newUsages = [];
-      var typeInfo = new _TypeInfo.TypeInfo(this._schema);
-      (0, _visitor.visit)(node, (0, _TypeInfo.visitWithTypeInfo)(typeInfo, {
-        VariableDefinition: function VariableDefinition() {
-          return false;
-        },
-        Variable: function Variable(variable) {
-          newUsages.push({
-            node: variable,
-            type: typeInfo.getInputType(),
-            defaultValue: typeInfo.getDefaultValue()
-          });
+class ValidationContext extends ASTValidationContext {
+    constructor(schema, ast, typeInfo, onError, hideSuggestions) {
+        super(ast, onError);
+        this._schema = schema;
+        this._typeInfo = typeInfo;
+        this._variableUsages = new Map();
+        this._recursiveVariableUsages = new Map();
+        this._hideSuggestions = hideSuggestions ?? false;
+    }
+    get [Symbol.toStringTag]() {
+        return 'ValidationContext';
+    }
+    get hideSuggestions() {
+        return this._hideSuggestions;
+    }
+    getSchema() {
+        return this._schema;
+    }
+    getVariableUsages(node) {
+        let usages = this._variableUsages.get(node);
+        if (!usages) {
+            const newUsages = [];
+            const typeInfo = new TypeInfo_ts_1.TypeInfo(this._schema, undefined, this._typeInfo.getFragmentSignatureByName());
+            const fragmentDefinition = node.kind === kinds_ts_1.Kind.FRAGMENT_DEFINITION ? node : undefined;
+            (0, visitor_ts_1.visit)(node, (0, TypeInfo_ts_1.visitWithTypeInfo)(typeInfo, {
+                VariableDefinition: () => false,
+                Variable(variable) {
+                    let fragmentVariableDefinition;
+                    if (fragmentDefinition) {
+                        const fragmentSignature = typeInfo.getFragmentSignatureByName()(fragmentDefinition.name.value);
+                        fragmentVariableDefinition =
+                            fragmentSignature?.variableDefinitions.get(variable.name.value);
+                        newUsages.push({
+                            node: variable,
+                            type: typeInfo.getInputType(),
+                            parentType: typeInfo.getParentInputType(),
+                            defaultValue: undefined,
+                            fragmentVariableDefinition,
+                        });
+                    }
+                    else {
+                        newUsages.push({
+                            node: variable,
+                            type: typeInfo.getInputType(),
+                            parentType: typeInfo.getParentInputType(),
+                            defaultValue: typeInfo.getDefaultValue(),
+                            fragmentVariableDefinition: undefined,
+                        });
+                    }
+                },
+            }));
+            usages = newUsages;
+            this._variableUsages.set(node, usages);
         }
-      }));
-      usages = newUsages;
-
-      this._variableUsages.set(node, usages);
+        return usages;
     }
-
-    return usages;
-  };
-
-  _proto3.getRecursiveVariableUsages = function getRecursiveVariableUsages(operation) {
-    var usages = this._recursiveVariableUsages.get(operation);
-
-    if (!usages) {
-      usages = this.getVariableUsages(operation);
-
-      for (var _i6 = 0, _this$getRecursivelyR2 = this.getRecursivelyReferencedFragments(operation); _i6 < _this$getRecursivelyR2.length; _i6++) {
-        var frag = _this$getRecursivelyR2[_i6];
-        usages = usages.concat(this.getVariableUsages(frag));
-      }
-
-      this._recursiveVariableUsages.set(operation, usages);
+    getRecursiveVariableUsages(operation) {
+        let usages = this._recursiveVariableUsages.get(operation);
+        if (!usages) {
+            usages = this.getVariableUsages(operation);
+            for (const frag of this.getRecursivelyReferencedFragments(operation)) {
+                usages = usages.concat(this.getVariableUsages(frag));
+            }
+            this._recursiveVariableUsages.set(operation, usages);
+        }
+        return usages;
     }
-
-    return usages;
-  };
-
-  _proto3.getType = function getType() {
-    return this._typeInfo.getType();
-  };
-
-  _proto3.getParentType = function getParentType() {
-    return this._typeInfo.getParentType();
-  };
-
-  _proto3.getInputType = function getInputType() {
-    return this._typeInfo.getInputType();
-  };
-
-  _proto3.getParentInputType = function getParentInputType() {
-    return this._typeInfo.getParentInputType();
-  };
-
-  _proto3.getFieldDef = function getFieldDef() {
-    return this._typeInfo.getFieldDef();
-  };
-
-  _proto3.getDirective = function getDirective() {
-    return this._typeInfo.getDirective();
-  };
-
-  _proto3.getArgument = function getArgument() {
-    return this._typeInfo.getArgument();
-  };
-
-  return ValidationContext;
-}(ASTValidationContext);
-
+    getType() {
+        return this._typeInfo.getType();
+    }
+    getParentType() {
+        return this._typeInfo.getParentType();
+    }
+    getInputType() {
+        return this._typeInfo.getInputType();
+    }
+    getParentInputType() {
+        return this._typeInfo.getParentInputType();
+    }
+    getFieldDef() {
+        return this._typeInfo.getFieldDef();
+    }
+    getDirective() {
+        return this._typeInfo.getDirective();
+    }
+    getArgument() {
+        return this._typeInfo.getArgument();
+    }
+    getFragmentSignature() {
+        return this._typeInfo.getFragmentSignature();
+    }
+    getFragmentSignatureByName() {
+        return this._typeInfo.getFragmentSignatureByName();
+    }
+    getEnumValue() {
+        return this._typeInfo.getEnumValue();
+    }
+}
 exports.ValidationContext = ValidationContext;
+//# sourceMappingURL=ValidationContext.js.map

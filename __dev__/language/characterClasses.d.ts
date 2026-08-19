@@ -1,0 +1,1 @@
+export * from '../../language/characterClasses.js';

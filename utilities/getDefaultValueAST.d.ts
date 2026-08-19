@@ -1,0 +1,4 @@
+import type { ConstValueNode } from "../language/ast.js";
+import type { GraphQLArgument, GraphQLInputField } from "../type/definition.js";
+/** @internal */
+export declare function getDefaultValueAST(argOrInputField: GraphQLArgument | GraphQLInputField): ConstValueNode | undefined;
