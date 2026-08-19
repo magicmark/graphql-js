@@ -819,7 +819,9 @@ export class GraphQLSchema {
     // this function is part "hot" path inside executor and check presence
     // of 'getFields' is faster than to use `!isUnionType`
     if ('getFields' in parentType) {
-      return parentType.getFields()[fieldName];
+      return parentType.getFields()[fieldName] as
+        | GraphQLField<unknown, unknown>
+        | undefined;
     }
     return undefined;
   }

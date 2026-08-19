@@ -45,6 +45,7 @@ import type {
   IntrospectionObjectType,
   IntrospectionQuery,
   IntrospectionScalarType,
+  IntrospectionStructType,
   IntrospectionType,
   IntrospectionTypeRef,
   IntrospectionUnionType,
@@ -210,6 +211,8 @@ export function buildClientSchema(
         return buildEnumDef(type);
       case TypeKind.INPUT_OBJECT:
         return buildInputObjectDef(type);
+      case TypeKind.STRUCT:
+        return buildStructDef(type);
       default:
         // TypeScript considers this unreachable, but invalid runtime input can reach it.
         // Note: we include a default case rather than throwing after the switch to avoid
@@ -331,6 +334,24 @@ export function buildClientSchema(
       description: inputObjectIntrospection.description,
       fields: () => buildInputValueDefMap(inputObjectIntrospection.inputFields),
       isOneOf: inputObjectIntrospection.isOneOf,
+    });
+  }
+
+  function buildStructDef(
+    structIntrospection: IntrospectionInputObjectType | IntrospectionStructType,
+  ): GraphQLInputObjectType {
+    if (structIntrospection.inputFields == null) {
+      const structIntrospectionStr = inspect(structIntrospection);
+      throw new Error(
+        `Introspection result missing inputFields: ${structIntrospectionStr}.`,
+      );
+    }
+    return new GraphQLInputObjectType({
+      name: structIntrospection.name,
+      description: structIntrospection.description,
+      fields: () => buildInputValueDefMap(structIntrospection.inputFields),
+      isOneOf: structIntrospection.isOneOf,
+      isStruct: true,
     });
   }
 

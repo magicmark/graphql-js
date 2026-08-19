@@ -999,6 +999,8 @@ export interface InputObjectTypeDefinitionNode {
   readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
   /** Fields declared by this object, interface, input object, or literal. */
   readonly fields?: ReadonlyArray<InputValueDefinitionNode> | undefined;
+  /** Whether this type was defined with the `struct` keyword. */
+  readonly isStruct?: boolean | undefined;
 }
 
 // Directive Definitions
@@ -1140,6 +1142,8 @@ export interface InputObjectTypeExtensionNode {
   readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
   /** Fields declared by this object, interface, input object, or literal. */
   readonly fields?: ReadonlyArray<InputValueDefinitionNode> | undefined;
+  /** Whether this type was defined with the `struct` keyword. */
+  readonly isStruct?: boolean | undefined;
 }
 
 /** A directive extension. */

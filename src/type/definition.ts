@@ -674,6 +674,73 @@ export function assertInputObjectType(type: unknown): GraphQLInputObjectType {
   return type;
 }
 
+/**
+ * Returns true when the value is a struct type (an input object type with `isStruct: true`).
+ * @param type - The GraphQL type to inspect.
+ * @returns True when the value is a struct type.
+ * @example
+ * ```ts
+ * import { buildSchema } from 'graphql/utilities';
+ * import { isStructType } from 'graphql/type';
+ *
+ * const schema = buildSchema(`
+ *   struct Locale {
+ *     code: String
+ *     currency: String
+ *   }
+ *
+ *   input LegacyInput {
+ *     name: String
+ *   }
+ *
+ *   type Query {
+ *     locale: Locale
+ *   }
+ * `);
+ *
+ * isStructType(schema.getType('Locale')); // => true
+ * isStructType(schema.getType('LegacyInput')); // => false
+ * ```
+ */
+export function isStructType(
+  type: unknown,
+): type is GraphQLInputObjectType {
+  return isInputObjectType(type) && type.isStruct;
+}
+
+/**
+ * Returns the value as a struct type, or throws if it is not one.
+ * @param type - The GraphQL type to inspect.
+ * @returns The value typed as a struct type.
+ * @example
+ * ```ts
+ * import { buildSchema } from 'graphql/utilities';
+ * import { assertStructType } from 'graphql/type';
+ *
+ * const schema = buildSchema(`
+ *   struct Locale {
+ *     code: String
+ *     currency: String
+ *   }
+ *
+ *   type Query {
+ *     locale: Locale
+ *   }
+ * `);
+ *
+ * assertStructType(schema.getType('Locale')); // => GraphQLInputObjectType
+ * assertStructType(schema.getType('Query')); // throws an error
+ * ```
+ */
+export function assertStructType(type: unknown): GraphQLInputObjectType {
+  if (!isStructType(type)) {
+    throw new Error(
+      `Expected ${inspect(type)} to be a GraphQL Struct type.`,
+    );
+  }
+  return type;
+}
+
 /** @private */
 const inputFieldSymbol: unique symbol = Symbol('InputField');
 
@@ -1050,6 +1117,7 @@ export function isOutputType(type: unknown): type is GraphQLOutputType {
     isInterfaceType(type) ||
     isUnionType(type) ||
     isEnumType(type) ||
+    (isInputObjectType(type) && type.isStruct) ||
     (isWrappingType(type) && isOutputType(type.ofType))
   );
 }
@@ -1167,7 +1235,8 @@ export function assertLeafType(type: unknown): GraphQLLeafType {
 export type GraphQLCompositeType =
   | GraphQLObjectType
   | GraphQLInterfaceType
-  | GraphQLUnionType;
+  | GraphQLUnionType
+  | GraphQLInputObjectType;
 
 /**
  * Returns true when the value is a GraphQL object, interface, or union type.
@@ -1202,7 +1271,12 @@ export type GraphQLCompositeType =
  * ```
  */
 export function isCompositeType(type: unknown): type is GraphQLCompositeType {
-  return isObjectType(type) || isInterfaceType(type) || isUnionType(type);
+  return (
+    isObjectType(type) ||
+    isInterfaceType(type) ||
+    isUnionType(type) ||
+    (isInputObjectType(type) && type.isStruct)
+  );
 }
 
 /**
@@ -1686,7 +1760,8 @@ export type GraphQLNamedOutputType =
   | GraphQLObjectType
   | GraphQLInterfaceType
   | GraphQLUnionType
-  | GraphQLEnumType;
+  | GraphQLEnumType
+  | GraphQLInputObjectType;
 
 /**
  * Returns true when the value is a GraphQL named type.
@@ -4853,6 +4928,8 @@ export class GraphQLInputObjectType implements GraphQLSchemaElement {
   extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
   /** Whether this input object uses the experimental OneOf input object semantics. */
   isOneOf: boolean;
+  /** Whether this type was defined with the `struct` keyword (enables output-position usage). */
+  isStruct: boolean;
 
   private _fields: ThunkObjMap<GraphQLInputField>;
 
@@ -4932,6 +5009,7 @@ export class GraphQLInputObjectType implements GraphQLSchemaElement {
     this.astNode = config.astNode;
     this.extensionASTNodes = config.extensionASTNodes ?? [];
     this.isOneOf = config.isOneOf ?? false;
+    this.isStruct = config.isStruct ?? false;
 
     this._fields = defineInputFieldMap.bind(undefined, this, config.fields);
   }
@@ -5011,6 +5089,7 @@ export class GraphQLInputObjectType implements GraphQLSchemaElement {
       astNode: this.astNode,
       extensionASTNodes: this.extensionASTNodes,
       isOneOf: this.isOneOf,
+      isStruct: this.isStruct,
     };
   }
 
@@ -5064,6 +5143,20 @@ export class GraphQLInputObjectType implements GraphQLSchemaElement {
   }
 }
 
+/**
+ * Canonical constructor alias. GraphQLStructType is the new name for GraphQLInputObjectType.
+ * @deprecated Use GraphQLInputObjectType directly (the class carries the `isStruct` flag).
+ */
+export type GraphQLStructType = GraphQLInputObjectType;
+
+/**
+ * Canonical constructor alias. GraphQLStructType is the new name for GraphQLInputObjectType.
+ * @deprecated Use GraphQLInputObjectType directly (the class carries the `isStruct` flag).
+ */
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const GraphQLStructType: typeof GraphQLInputObjectType =
+  GraphQLInputObjectType;
+
 function defineInputFieldMap(
   parentType: GraphQLInputObjectType,
   fields: ThunkObjMap<GraphQLInputFieldConfig>,
@@ -5092,6 +5185,8 @@ export interface GraphQLInputObjectTypeConfig {
   extensionASTNodes?: Maybe<ReadonlyArray<InputObjectTypeExtensionNode>>;
   /** Whether this input object uses the experimental OneOf input object semantics. */
   isOneOf?: boolean;
+  /** Whether this type was defined with the `struct` keyword (enables output-position usage). */
+  isStruct?: boolean;
 }
 
 /** @internal */

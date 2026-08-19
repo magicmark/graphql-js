@@ -24,6 +24,7 @@ import { OperationTypeNode } from '../language/ast.ts';
 
 import type {
   GraphQLAbstractType,
+  GraphQLInputObjectType,
   GraphQLLeafType,
   GraphQLList,
   GraphQLObjectType,
@@ -33,6 +34,7 @@ import type {
 } from '../type/definition.ts';
 import {
   isAbstractType,
+  isInputObjectType,
   isLeafType,
   isListType,
   isNonNullType,
@@ -817,6 +819,16 @@ export class Executor<
       return this.completeLeafValue(returnType, result);
     }
 
+    // If field type is a struct type, return fields directly (wildcard if no selection set).
+    if (isInputObjectType(returnType) && returnType.isStruct) {
+      return this.completeStructValue(
+        returnType,
+        fieldDetailsList,
+        path,
+        result,
+      );
+    }
+
     // If field type is an abstract type, Interface or Union, determine the
     // runtime Object type and complete for that type.
     if (isAbstractType(returnType)) {
@@ -1413,6 +1425,44 @@ export class Executor<
       result,
       positionContext,
     );
+  }
+
+  completeStructValue(
+    returnType: GraphQLInputObjectType,
+    fieldDetailsList: FieldDetailsList,
+    _path: Path,
+    result: unknown,
+  ): ObjMap<unknown> {
+    if (typeof result !== 'object' || result === null) {
+      throw new GraphQLError(
+        `Expected value of type "${returnType}" but got: ${inspect(result)}.`,
+        { nodes: toNodes(fieldDetailsList) },
+      );
+    }
+
+    const firstFieldDetails = fieldDetailsList[0];
+    const selectionSet = firstFieldDetails.node.selectionSet;
+
+    if (!selectionSet) {
+      // Wildcard: return all fields from the struct
+      const fields = returnType.getFields();
+      const completed: ObjMap<unknown> = Object.create(null);
+      for (const fieldName of Object.keys(fields)) {
+        completed[fieldName] = (result as ObjMap<unknown>)[fieldName];
+      }
+      return completed;
+    }
+
+    // Selection set provided: return only selected fields
+    const completed: ObjMap<unknown> = Object.create(null);
+    for (const selection of selectionSet.selections) {
+      if (selection.kind === 'Field') {
+        const responseKey = selection.alias?.value ?? selection.name.value;
+        const fieldName = selection.name.value;
+        completed[responseKey] = (result as ObjMap<unknown>)[fieldName];
+      }
+    }
+    return completed;
   }
 
   invalidReturnTypeError(

@@ -453,6 +453,11 @@ describe('Introspection', () => {
                 },
                 {
                   name: 'INPUT_OBJECT',
+                  isDeprecated: true,
+                  deprecationReason: 'Use STRUCT.',
+                },
+                {
+                  name: 'STRUCT',
                   isDeprecated: false,
                   deprecationReason: null,
                 },

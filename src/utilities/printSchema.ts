@@ -268,9 +268,10 @@ function printInputObject(type: GraphQLInputObjectType): string {
   const fields = Object.values(type.getFields()).map(
     (f, i) => printDescription(f, '  ', !i) + '  ' + printInputValue(f),
   );
+  const keyword = type.isStruct ? 'struct' : 'input';
   return (
     printDescription(type) +
-    `input ${type}` +
+    `${keyword} ${type}` +
     (type.isOneOf ? ' @oneOf' : '') +
     printBlock(fields)
   );

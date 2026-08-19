@@ -663,6 +663,7 @@ export function extendSchemaImpl(
             astNode,
             extensionASTNodes,
             isOneOf: isOneOf(astNode),
+            isStruct: astNode.isStruct ?? false,
           });
         }
       }

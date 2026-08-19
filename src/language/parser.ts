@@ -440,6 +440,8 @@ export class Parser {
           return this.parseEnumTypeDefinition();
         case 'input':
           return this.parseInputObjectTypeDefinition();
+        case 'struct':
+          return this.parseStructTypeDefinition();
         case 'directive':
           return this.parseDirectiveDefinition();
       }
@@ -1377,6 +1379,29 @@ export class Parser {
   }
 
   /**
+   * StructTypeDefinition :
+   *   Description? struct Name Directives[Const]? InputFieldsDefinition?
+   *
+   * @internal
+   */
+  parseStructTypeDefinition(): InputObjectTypeDefinitionNode {
+    const start = this._lexer.token;
+    const description = this.parseDescription();
+    this.expectKeyword('struct');
+    const name = this.parseName();
+    const directives = this.parseConstDirectives();
+    const fields = this.parseInputFieldsDefinition();
+    return this.node<InputObjectTypeDefinitionNode>(start, {
+      kind: Kind.INPUT_OBJECT_TYPE_DEFINITION,
+      description,
+      name,
+      directives,
+      fields,
+      isStruct: true,
+    });
+  }
+
+  /**
    * ```
    * InputFieldsDefinition : { InputValueDefinition+ }
    * ```
@@ -1426,6 +1451,8 @@ export class Parser {
           return this.parseEnumTypeExtension();
         case 'input':
           return this.parseInputObjectTypeExtension();
+        case 'struct':
+          return this.parseStructTypeExtension();
         case 'directive':
           return this.parseDirectiveExtension();
       }
@@ -1621,6 +1648,32 @@ export class Parser {
       name,
       directives,
       fields,
+    });
+  }
+
+  /**
+   * StructTypeExtension :
+   *   - extend struct Name Directives[Const]? InputFieldsDefinition
+   *   - extend struct Name Directives[Const]
+   *
+   * @internal
+   */
+  parseStructTypeExtension(): InputObjectTypeExtensionNode {
+    const start = this._lexer.token;
+    this.expectKeyword('extend');
+    this.expectKeyword('struct');
+    const name = this.parseName();
+    const directives = this.parseConstDirectives();
+    const fields = this.parseInputFieldsDefinition();
+    if (directives === undefined && fields === undefined) {
+      throw this.unexpected();
+    }
+    return this.node<InputObjectTypeExtensionNode>(start, {
+      kind: Kind.INPUT_OBJECT_TYPE_EXTENSION,
+      name,
+      directives,
+      fields,
+      isStruct: true,
     });
   }
 

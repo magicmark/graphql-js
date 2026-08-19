@@ -259,9 +259,12 @@ const printDocASTReducer: ASTReducer<string> = {
   },
 
   InputObjectTypeDefinition: {
-    leave: ({ description, name, directives, fields }) =>
+    leave: ({ description, name, directives, fields, isStruct }) =>
       wrap('', description, '\n') +
-      join(['input', name, join(directives, ' '), block(fields)], ' '),
+      join(
+        [isStruct ? 'struct' : 'input', name, join(directives, ' '), block(fields)],
+        ' ',
+      ),
   },
 
   DirectiveDefinition: {
@@ -345,8 +348,16 @@ const printDocASTReducer: ASTReducer<string> = {
   },
 
   InputObjectTypeExtension: {
-    leave: ({ name, directives, fields }) =>
-      join(['extend input', name, join(directives, ' '), block(fields)], ' '),
+    leave: ({ name, directives, fields, isStruct }) =>
+      join(
+        [
+          isStruct ? 'extend struct' : 'extend input',
+          name,
+          join(directives, ' '),
+          block(fields),
+        ],
+        ' ',
+      ),
   },
 
   DirectiveExtension: {

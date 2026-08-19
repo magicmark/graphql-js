@@ -22,6 +22,7 @@ export type {
   IntrospectionUnionType,
   IntrospectionEnumType,
   IntrospectionInputObjectType,
+  IntrospectionStructType,
   IntrospectionTypeRef,
   IntrospectionInputTypeRef,
   IntrospectionOutputTypeRef,

@@ -905,7 +905,12 @@ describe('Type System Printer', () => {
         """
         Indicates this type is an input object. \`inputFields\` is a valid field.
         """
-        INPUT_OBJECT
+        INPUT_OBJECT @deprecated(reason: "Use STRUCT.")
+
+        """
+        Indicates this type is a struct. \`inputFields\` and \`fields\` are valid fields.
+        """
+        STRUCT
 
         """Indicates this type is a list. \`ofType\` is a valid field."""
         LIST

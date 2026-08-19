@@ -37,6 +37,7 @@ export {
   isEnumType,
   isEnumValue,
   isInputObjectType,
+  isStructType,
   isListType,
   isNonNullType,
   isInputType,
@@ -61,6 +62,7 @@ export {
   assertEnumType,
   assertEnumValue,
   assertInputObjectType,
+  assertStructType,
   assertInputField,
   assertListType,
   assertNonNullType,
@@ -82,6 +84,7 @@ export {
   GraphQLUnionType,
   GraphQLEnumType,
   GraphQLInputObjectType,
+  GraphQLStructType,
   // Type Wrappers
   GraphQLList,
   GraphQLNonNull,

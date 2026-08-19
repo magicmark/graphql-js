@@ -74,6 +74,7 @@ export {
   GraphQLUnionType,
   GraphQLEnumType,
   GraphQLInputObjectType,
+  GraphQLStructType,
   GraphQLList,
   GraphQLNonNull,
   // Standard GraphQL Scalars
@@ -126,6 +127,7 @@ export {
   isEnumType,
   isEnumValue,
   isInputObjectType,
+  isStructType,
   isInputField,
   isListType,
   isNonNullType,
@@ -155,6 +157,7 @@ export {
   assertEnumType,
   assertEnumValue,
   assertInputObjectType,
+  assertStructType,
   assertInputField,
   assertListType,
   assertNonNullType,

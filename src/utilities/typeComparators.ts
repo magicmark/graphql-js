@@ -3,6 +3,7 @@
 import type { GraphQLCompositeType, GraphQLType } from '../type/definition.ts';
 import {
   isAbstractType,
+  isInputObjectType,
   isInterfaceType,
   isListType,
   isNonNullType,
@@ -176,6 +177,11 @@ export function doTypesOverlap(
   // Equivalent types overlap
   if (typeA === typeB) {
     return true;
+  }
+
+  // Struct types only overlap with themselves (handled above)
+  if (isInputObjectType(typeA) || isInputObjectType(typeB)) {
+    return false;
   }
 
   if (isAbstractType(typeA)) {

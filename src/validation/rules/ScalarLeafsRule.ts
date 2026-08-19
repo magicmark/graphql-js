@@ -7,7 +7,11 @@ import { GraphQLError } from '../../error/GraphQLError.ts';
 import type { FieldNode } from '../../language/ast.ts';
 import type { ASTVisitor } from '../../language/visitor.ts';
 
-import { getNamedType, isLeafType } from '../../type/definition.ts';
+import {
+  getNamedType,
+  isLeafType,
+  isStructType,
+} from '../../type/definition.ts';
 
 import type { ValidationContext } from '../ValidationContext.ts';
 
@@ -50,7 +54,8 @@ export function ScalarLeafsRule(context: ValidationContext): ASTVisitor {
       const type = context.getType();
       const selectionSet = node.selectionSet;
       if (type) {
-        if (isLeafType(getNamedType(type))) {
+        const namedType = getNamedType(type);
+        if (isLeafType(namedType)) {
           if (selectionSet) {
             const fieldName = node.name.value;
             const typeStr = inspect(type);
@@ -58,6 +63,18 @@ export function ScalarLeafsRule(context: ValidationContext): ASTVisitor {
               new GraphQLError(
                 `Field "${fieldName}" must not have a selection since type "${typeStr}" has no subfields.`,
                 { nodes: selectionSet },
+              ),
+            );
+          }
+        } else if (isStructType(namedType)) {
+          // Struct types allow optional selection sets (wildcard)
+          if (selectionSet?.selections.length === 0) {
+            const fieldName = node.name.value;
+            const typeStr = inspect(type);
+            context.reportError(
+              new GraphQLError(
+                `Field "${fieldName}" of type "${typeStr}" must have at least one field selected.`,
+                { nodes: node },
               ),
             );
           }

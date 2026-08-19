@@ -258,7 +258,8 @@ export type IntrospectionType =
   | IntrospectionInterfaceType
   | IntrospectionUnionType
   | IntrospectionEnumType
-  | IntrospectionInputObjectType;
+  | IntrospectionInputObjectType
+  | IntrospectionStructType;
 
 /** An introspection type that can appear in output position. */
 export type IntrospectionOutputType =
@@ -266,13 +267,15 @@ export type IntrospectionOutputType =
   | IntrospectionObjectType
   | IntrospectionInterfaceType
   | IntrospectionUnionType
-  | IntrospectionEnumType;
+  | IntrospectionEnumType
+  | IntrospectionStructType;
 
 /** An introspection type that can appear in input position. */
 export type IntrospectionInputType =
   | IntrospectionScalarType
   | IntrospectionEnumType
-  | IntrospectionInputObjectType;
+  | IntrospectionInputObjectType
+  | IntrospectionStructType;
 
 /** The introspection representation of a scalar type. */
 export interface IntrospectionScalarType {
@@ -359,6 +362,20 @@ export interface IntrospectionInputObjectType {
   /** Input fields declared by this input object type. */
   readonly inputFields: ReadonlyArray<IntrospectionInputValue>;
   /** Whether this input object uses the experimental OneOf input object semantics. */
+  readonly isOneOf: boolean;
+}
+
+/** The introspection representation of a struct type. */
+export interface IntrospectionStructType {
+  /** The introspection kind discriminator for this type reference or type. */
+  readonly kind: typeof TypeKind.STRUCT;
+  /** The GraphQL name for this schema element. */
+  readonly name: string;
+  /** Human-readable description for this schema element, if provided. */
+  readonly description?: Maybe<string>;
+  /** Input fields declared by this struct type. */
+  readonly inputFields: ReadonlyArray<IntrospectionInputValue>;
+  /** Whether this struct uses the experimental OneOf semantics. */
   readonly isOneOf: boolean;
 }
 

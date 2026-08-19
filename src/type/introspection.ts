@@ -262,7 +262,7 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
             return TypeKind.ENUM;
           }
           if (isInputObjectType(type)) {
-            return TypeKind.INPUT_OBJECT;
+            return type.isStruct ? TypeKind.STRUCT : TypeKind.INPUT_OBJECT;
           }
           if (isListType(type)) {
             return TypeKind.LIST;
@@ -302,6 +302,21 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
         resolve(type, { includeDeprecated }) {
           if (isObjectType(type) || isInterfaceType(type)) {
             const fields = Object.values(type.getFields());
+            return includeDeprecated === true
+              ? fields
+              : fields.filter((field) => field.deprecationReason == null);
+          }
+          if (isInputObjectType(type) && type.isStruct) {
+            const inputFields = Object.values(type.getFields());
+            const fields = inputFields.map((f) => ({
+              name: f.name,
+              description: f.description,
+              type: f.type,
+              args: [],
+              deprecationReason: f.deprecationReason,
+              extensions: f.extensions,
+              isDeprecated: f.deprecationReason != null,
+            }));
             return includeDeprecated === true
               ? fields
               : fields.filter((field) => field.deprecationReason == null);
@@ -498,6 +513,7 @@ export const TypeKind = {
   UNION: 'UNION' as const,
   ENUM: 'ENUM' as const,
   INPUT_OBJECT: 'INPUT_OBJECT' as const,
+  STRUCT: 'STRUCT' as const,
   LIST: 'LIST' as const,
   NON_NULL: 'NON_NULL' as const,
 } as const;
@@ -542,6 +558,12 @@ export const __TypeKind: GraphQLEnumType = new GraphQLEnumType({
       value: TypeKind.INPUT_OBJECT,
       description:
         'Indicates this type is an input object. `inputFields` is a valid field.',
+      deprecationReason: 'Use STRUCT.',
+    },
+    STRUCT: {
+      value: TypeKind.STRUCT,
+      description:
+        'Indicates this type is a struct. `inputFields` and `fields` are valid fields.',
     },
     LIST: {
       value: TypeKind.LIST,
