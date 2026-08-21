@@ -24,6 +24,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
   isInputType,
   isOutputType,
@@ -40,6 +41,7 @@ import type {
   IntrospectionField,
   IntrospectionInputObjectType,
   IntrospectionInputValue,
+  IntrospectionStructObjectType,
   IntrospectionInterfaceType,
   IntrospectionNamedTypeRef,
   IntrospectionObjectType,
@@ -208,6 +210,8 @@ export function buildClientSchema(
         return buildUnionDef(type);
       case TypeKind.ENUM:
         return buildEnumDef(type);
+      case TypeKind.STRUCT_OBJECT:
+        return buildStructDef(type);
       case TypeKind.INPUT_OBJECT:
         return buildInputObjectDef(type);
       default:
@@ -314,6 +318,39 @@ export function buildClientSchema(
           deprecationReason: valueIntrospection.deprecationReason,
         }),
       ),
+    });
+  }
+
+  function buildStructDef(
+    structIntrospection: IntrospectionStructObjectType,
+  ): GraphQLStructObjectType {
+    if (structIntrospection.fields == null) {
+      throw new Error(
+        `Introspection result missing fields: ${inspect(structIntrospection)}.`,
+      );
+    }
+    return new GraphQLStructObjectType({
+      name: structIntrospection.name,
+      description: structIntrospection.description,
+      fields: () =>
+        keyValMap(
+          structIntrospection.fields,
+          (field) => field.name,
+          (field) => {
+            const type = getType(field.type);
+            if (!isInputType(type)) {
+              throw new Error(
+                `Introspection must provide input type for struct fields, but received: ${inspect(type)}.`,
+              );
+            }
+            return {
+              description: field.description,
+              type,
+              deprecationReason: field.deprecationReason,
+            };
+          },
+        ),
+      isOneOf: structIntrospection.isOneOf,
     });
   }
 
