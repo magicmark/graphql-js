@@ -62,6 +62,8 @@ import type {
   SelectionNode,
   SelectionSetNode,
   StringValueNode,
+  StructTypeDefinitionNode,
+  StructTypeExtensionNode,
   Token,
   TypeCoordinateNode,
   TypeNode,
@@ -438,6 +440,8 @@ export class Parser {
           return this.parseUnionTypeDefinition();
         case 'enum':
           return this.parseEnumTypeDefinition();
+        case 'struct':
+          return this.parseStructTypeDefinition();
         case 'input':
           return this.parseInputObjectTypeDefinition();
         case 'directive':
@@ -1360,6 +1364,22 @@ export class Parser {
    *
    * @internal
    */
+  parseStructTypeDefinition(): StructTypeDefinitionNode {
+    const start = this._lexer.token;
+    const description = this.parseDescription();
+    this.expectKeyword('struct');
+    const name = this.parseName();
+    const directives = this.parseConstDirectives();
+    const fields = this.parseInputFieldsDefinition();
+    return this.node<StructTypeDefinitionNode>(start, {
+      kind: Kind.STRUCT_TYPE_DEFINITION,
+      description,
+      name,
+      directives,
+      fields,
+    });
+  }
+
   parseInputObjectTypeDefinition(): InputObjectTypeDefinitionNode {
     const start = this._lexer.token;
     const description = this.parseDescription();
@@ -1424,6 +1444,8 @@ export class Parser {
           return this.parseUnionTypeExtension();
         case 'enum':
           return this.parseEnumTypeExtension();
+        case 'struct':
+          return this.parseStructTypeExtension();
         case 'input':
           return this.parseInputObjectTypeExtension();
         case 'directive':
@@ -1606,6 +1628,24 @@ export class Parser {
    *
    * @internal
    */
+  parseStructTypeExtension(): StructTypeExtensionNode {
+    const start = this._lexer.token;
+    this.expectKeyword('extend');
+    this.expectKeyword('struct');
+    const name = this.parseName();
+    const directives = this.parseConstDirectives();
+    const fields = this.parseInputFieldsDefinition();
+    if (directives === undefined && fields === undefined) {
+      throw this.unexpected();
+    }
+    return this.node<StructTypeExtensionNode>(start, {
+      kind: Kind.STRUCT_TYPE_EXTENSION,
+      name,
+      directives,
+      fields,
+    });
+  }
+
   parseInputObjectTypeExtension(): InputObjectTypeExtensionNode {
     const start = this._lexer.token;
     this.expectKeyword('extend');

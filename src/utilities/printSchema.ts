@@ -17,6 +17,7 @@ import type {
   GraphQLNamedType,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from '../type/definition.ts';
 import {
@@ -25,6 +26,7 @@ import {
   isInterfaceType,
   isObjectType,
   isScalarType,
+  isStructObjectType,
   isUnionType,
 } from '../type/definition.ts';
 import type { GraphQLDirective } from '../type/directives.ts';
@@ -207,6 +209,9 @@ export function printType(type: GraphQLNamedType): string {
   }
   if (isInputObjectType(type)) {
     return printInputObject(type);
+  }
+  if (isStructObjectType(type)) {
+    return printStruct(type);
     /* node:coverage ignore next 4 */
   }
   // Not reachable, all possible types have been considered.
@@ -271,6 +276,18 @@ function printInputObject(type: GraphQLInputObjectType): string {
   return (
     printDescription(type) +
     `input ${type}` +
+    (type.isOneOf ? ' @oneOf' : '') +
+    printBlock(fields)
+  );
+}
+
+function printStruct(type: GraphQLStructObjectType): string {
+  const fields = Object.values(type.getFields()).map(
+    (f, i) => printDescription(f, '  ', !i) + '  ' + printInputValue(f),
+  );
+  return (
+    printDescription(type) +
+    `struct ${type}` +
     (type.isOneOf ? ' @oneOf' : '') +
     printBlock(fields)
   );

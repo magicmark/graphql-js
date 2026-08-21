@@ -24,6 +24,8 @@ import type {
   ScalarTypeExtensionNode,
   SchemaDefinitionNode,
   SchemaExtensionNode,
+  StructTypeDefinitionNode,
+  StructTypeExtensionNode,
   TypeDefinitionNode,
   TypeNode,
   UnionTypeDefinitionNode,
@@ -48,6 +50,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from '../type/definition.ts';
 import {
@@ -188,6 +191,10 @@ export function extendSchemaImpl(
   >();
   const unionExtensions = new AccumulatorMap<string, UnionTypeExtensionNode>();
   const enumExtensions = new AccumulatorMap<string, EnumTypeExtensionNode>();
+  const structExtensions = new AccumulatorMap<
+    string,
+    StructTypeExtensionNode
+  >();
   const inputObjectExtensions = new AccumulatorMap<
     string,
     InputObjectTypeExtensionNode
@@ -227,6 +234,7 @@ export function extendSchemaImpl(
       case Kind.INTERFACE_TYPE_DEFINITION:
       case Kind.UNION_TYPE_DEFINITION:
       case Kind.ENUM_TYPE_DEFINITION:
+      case Kind.STRUCT_TYPE_DEFINITION:
       case Kind.INPUT_OBJECT_TYPE_DEFINITION:
         typeDefs.push(def);
         break;
@@ -246,6 +254,9 @@ export function extendSchemaImpl(
         break;
       case Kind.ENUM_TYPE_EXTENSION:
         enumExtensions.add(def.name.value, def);
+        break;
+      case Kind.STRUCT_TYPE_EXTENSION:
+        structExtensions.add(def.name.value, def);
         break;
       case Kind.INPUT_OBJECT_TYPE_EXTENSION:
         inputObjectExtensions.add(def.name.value, def);
@@ -301,6 +312,17 @@ export function extendSchemaImpl(
           astNode: schemaDef ?? config.astNode,
           extensionASTNodes: config.extensionASTNodes.concat(schemaExtensions),
           assumeValid: options?.assumeValid ?? false,
+        };
+      },
+      [SchemaElementKind.STRUCT_OBJECT]: (config) => {
+        const extensions = structExtensions.get(config.name) ?? [];
+        return {
+          ...config,
+          fields: () => ({
+            ...config.fields(),
+            ...buildInputFieldMap(extensions),
+          }),
+          extensionASTNodes: config.extensionASTNodes.concat(extensions),
         };
       },
       [SchemaElementKind.INPUT_OBJECT]: (config) => {
@@ -514,7 +536,10 @@ export function extendSchemaImpl(
 
     function buildInputFieldMap(
       nodes: ReadonlyArray<
-        InputObjectTypeDefinitionNode | InputObjectTypeExtensionNode
+        | StructTypeDefinitionNode
+        | StructTypeExtensionNode
+        | InputObjectTypeDefinitionNode
+        | InputObjectTypeExtensionNode
       >,
     ): GraphQLInputFieldNormalizedConfigMap {
       const inputFieldMap = Object.create(null);
@@ -652,6 +677,21 @@ export function extendSchemaImpl(
             extensionASTNodes,
           });
         }
+        case Kind.STRUCT_TYPE_DEFINITION: {
+          const extensionASTNodes = structExtensions.get(name) ?? [];
+          const allNodes: ReadonlyArray<
+            StructTypeDefinitionNode | StructTypeExtensionNode
+          > = [astNode, ...extensionASTNodes];
+
+          return new GraphQLStructObjectType({
+            name,
+            description: astNode.description?.value,
+            fields: () => buildInputFieldMap(allNodes),
+            astNode,
+            extensionASTNodes,
+            isOneOf: isOneOf(astNode),
+          });
+        }
         case Kind.INPUT_OBJECT_TYPE_DEFINITION: {
           const extensionASTNodes = inputObjectExtensions.get(name) ?? [];
           const allNodes = [astNode, ...extensionASTNodes];
@@ -714,6 +754,8 @@ function getSpecifiedByURL(
  *
  * @internal
  */
-function isOneOf(node: InputObjectTypeDefinitionNode): boolean {
+function isOneOf(
+  node: StructTypeDefinitionNode | InputObjectTypeDefinitionNode,
+): boolean {
   return Boolean(getDirectiveValues(GraphQLOneOfDirective, node));
 }

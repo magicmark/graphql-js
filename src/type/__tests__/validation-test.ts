@@ -1482,8 +1482,7 @@ describe('Type System: Object fields must have output types', () => {
   for (const type of notOutputTypes) {
     const typeStr = inspect(type);
     it(`rejects a non-output type as an Object field type: ${typeStr}`, () => {
-      // @ts-expect-error
-      const schema = schemaWithObjectField({ type });
+      const schema = schemaWithObjectField({ type: type as any });
       expectJSON(validateSchema(schema)).toDeepEqual([
         {
           message: `The type of BadObject.badField must be Output Type but got: ${typeStr}.`,
@@ -1836,8 +1835,7 @@ describe('Type System: Interface fields must have output types', () => {
   for (const type of notOutputTypes) {
     const typeStr = inspect(type);
     it(`rejects a non-output type as an Interface field type: ${typeStr}`, () => {
-      // @ts-expect-error
-      const schema = schemaWithInterfaceField({ type });
+      const schema = schemaWithInterfaceField({ type: type as any });
       expectJSON(validateSchema(schema)).toDeepEqual([
         {
           message: `The type of BadImplementing.badField must be Output Type but got: ${typeStr}.`,

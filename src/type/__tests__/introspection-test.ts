@@ -452,6 +452,11 @@ describe('Introspection', () => {
                   deprecationReason: null,
                 },
                 {
+                  name: 'STRUCT_OBJECT',
+                  isDeprecated: false,
+                  deprecationReason: null,
+                },
+                {
                   name: 'INPUT_OBJECT',
                   isDeprecated: false,
                   deprecationReason: null,
@@ -973,6 +978,11 @@ describe('Introspection', () => {
                   deprecationReason: null,
                 },
                 {
+                  name: 'STRUCT',
+                  isDeprecated: false,
+                  deprecationReason: null,
+                },
+                {
                   name: 'INPUT_OBJECT',
                   isDeprecated: false,
                   deprecationReason: null,
@@ -1081,7 +1091,7 @@ describe('Introspection', () => {
             {
               name: 'oneOf',
               isRepeatable: false,
-              locations: ['INPUT_OBJECT'],
+              locations: ['STRUCT', 'INPUT_OBJECT'],
               args: [],
             },
           ],

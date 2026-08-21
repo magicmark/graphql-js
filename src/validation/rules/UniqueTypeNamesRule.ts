@@ -42,6 +42,7 @@ export function UniqueTypeNamesRule(context: SDLValidationContext): ASTVisitor {
     InterfaceTypeDefinition: checkTypeName,
     UnionTypeDefinition: checkTypeName,
     EnumTypeDefinition: checkTypeName,
+    StructTypeDefinition: checkTypeName,
     InputObjectTypeDefinition: checkTypeName,
   };
 

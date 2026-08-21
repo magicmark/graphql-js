@@ -15,6 +15,7 @@ import type {
   GraphQLNamedType,
   GraphQLObjectTypeNormalizedConfig,
   GraphQLScalarTypeNormalizedConfig,
+  GraphQLStructObjectTypeNormalizedConfig,
   GraphQLType,
   GraphQLUnionTypeNormalizedConfig,
 } from '../type/definition.ts';
@@ -26,6 +27,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
   isEnumType,
   isInputObjectType,
@@ -34,6 +36,7 @@ import {
   isNonNullType,
   isObjectType,
   isScalarType,
+  isStructObjectType,
   isUnionType,
 } from '../type/definition.ts';
 import type { GraphQLDirectiveNormalizedConfig } from '../type/directives.ts';
@@ -63,6 +66,7 @@ export const SchemaElementKind = {
   UNION: 'UNION' as const,
   ENUM: 'ENUM' as const,
   ENUM_VALUE: 'ENUM_VALUE' as const,
+  STRUCT_OBJECT: 'STRUCT_OBJECT' as const,
   INPUT_OBJECT: 'INPUT_OBJECT' as const,
   INPUT_FIELD: 'INPUT_FIELD' as const,
   DIRECTIVE: 'DIRECTIVE' as const,
@@ -104,6 +108,10 @@ type GraphQLUnionTypeMappedConfig = EnsureThunks<
 type GraphQLEnumTypeMappedConfig = EnsureThunks<
   GraphQLEnumTypeNormalizedConfig,
   'values'
+>;
+type GraphQLStructObjectTypeMappedConfig = EnsureThunks<
+  GraphQLStructObjectTypeNormalizedConfig,
+  'fields'
 >;
 type GraphQLInputObjectTypeMappedConfig = EnsureThunks<
   GraphQLInputObjectTypeNormalizedConfig,
@@ -147,6 +155,10 @@ type EnumValueConfigMapper = (
   enumName: string,
 ) => GraphQLEnumValueConfig;
 
+type StructObjectTypeConfigMapper = (
+  structConfig: GraphQLStructObjectTypeMappedConfig,
+) => GraphQLStructObjectTypeMappedConfig;
+
 type InputObjectTypeConfigMapper = (
   inputObjectConfig: GraphQLInputObjectTypeMappedConfig,
 ) => GraphQLInputObjectTypeMappedConfig;
@@ -175,6 +187,7 @@ export interface ConfigMapperMap {
   [SchemaElementKind.UNION]?: UnionTypeConfigMapper;
   [SchemaElementKind.ENUM]?: EnumTypeConfigMapper;
   [SchemaElementKind.ENUM_VALUE]?: EnumValueConfigMapper;
+  [SchemaElementKind.STRUCT_OBJECT]?: StructObjectTypeConfigMapper;
   [SchemaElementKind.INPUT_OBJECT]?: InputObjectTypeConfigMapper;
   [SchemaElementKind.INPUT_FIELD]?: InputFieldConfigMapper;
   [SchemaElementKind.DIRECTIVE]?: DirectiveConfigMapper;
@@ -284,6 +297,9 @@ export function mapSchemaConfig(
     }
     if (isInputObjectType(type)) {
       return mapInputObjectType(type);
+    }
+    if (isStructObjectType(type)) {
+      return mapStructObjectType(type);
       /* node:coverage ignore next 4 */
     }
     // Not reachable, all possible type definition nodes have been considered.
@@ -411,6 +427,26 @@ export function mapSchemaConfig(
     return mapper == null
       ? mappedConfig
       : mapper(mappedConfig, valueName, enumName);
+  }
+
+  function mapStructObjectType(
+    type: GraphQLStructObjectType,
+  ): GraphQLStructObjectType {
+    const config = type.toConfig();
+    let mappedConfig: Maybe<GraphQLStructObjectTypeMappedConfig> = {
+      ...config,
+      fields: () => {
+        const newInputFieldMap = Object.create(null);
+        for (const [fieldName, field] of Object.entries(config.fields)) {
+          const mappedField = mapInputField(field, fieldName, type.name);
+          newInputFieldMap[fieldName] = mappedField;
+        }
+        return newInputFieldMap;
+      },
+    };
+    const mapper = configMapperMap[SchemaElementKind.STRUCT_OBJECT];
+    mappedConfig = mapper == null ? mappedConfig : mapper(mappedConfig);
+    return new GraphQLStructObjectType(mappedConfig);
   }
 
   function mapInputObjectType(

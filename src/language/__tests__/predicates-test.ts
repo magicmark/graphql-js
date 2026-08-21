@@ -45,6 +45,8 @@ describe('AST node predicates', () => {
       'ScalarTypeExtension',
       'SchemaDefinition',
       'SchemaExtension',
+      'StructTypeDefinition',
+      'StructTypeExtension',
       'UnionTypeDefinition',
       'UnionTypeExtension',
     ]);
@@ -107,6 +109,7 @@ describe('AST node predicates', () => {
       'ObjectTypeDefinition',
       'ScalarTypeDefinition',
       'SchemaDefinition',
+      'StructTypeDefinition',
       'UnionTypeDefinition',
     ]);
   });
@@ -118,6 +121,7 @@ describe('AST node predicates', () => {
       'InterfaceTypeDefinition',
       'ObjectTypeDefinition',
       'ScalarTypeDefinition',
+      'StructTypeDefinition',
       'UnionTypeDefinition',
     ]);
   });
@@ -131,6 +135,7 @@ describe('AST node predicates', () => {
       'ObjectTypeExtension',
       'ScalarTypeExtension',
       'SchemaExtension',
+      'StructTypeExtension',
       'UnionTypeExtension',
     ]);
   });
@@ -142,6 +147,7 @@ describe('AST node predicates', () => {
       'InterfaceTypeExtension',
       'ObjectTypeExtension',
       'ScalarTypeExtension',
+      'StructTypeExtension',
       'UnionTypeExtension',
     ]);
   });

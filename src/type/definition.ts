@@ -35,6 +35,8 @@ import type {
   OperationDefinitionNode,
   ScalarTypeDefinitionNode,
   ScalarTypeExtensionNode,
+  StructTypeDefinitionNode,
+  StructTypeExtensionNode,
   UnionTypeDefinitionNode,
   UnionTypeExtensionNode,
   ValueNode,
@@ -84,7 +86,7 @@ export function isType(type: unknown): type is GraphQLType {
     isInterfaceType(type) ||
     isUnionType(type) ||
     isEnumType(type) ||
-    isInputObjectType(type) ||
+    isStructObjectType(type) ||
     isListType(type) ||
     isNonNullType(type)
   );
@@ -601,6 +603,38 @@ export function assertEnumValue(value: unknown): GraphQLEnumValue {
 }
 
 /** @private */
+const structObjectSymbol: unique symbol = Symbol('StructObject');
+
+/**
+ * Returns true when the value is a GraphQLStructObjectType (includes
+ * GraphQLInputObjectType, which is a subclass).
+ * @param type - The GraphQL type to inspect.
+ * @returns True when the value is a GraphQLStructObjectType.
+ */
+export function isStructObjectType(
+  type: unknown,
+): type is GraphQLStructObjectType {
+  return (
+    instanceOf(type, structObjectSymbol, GraphQLStructObjectType) ||
+    instanceOf(type, inputObjectSymbol, GraphQLInputObjectType)
+  );
+}
+
+/**
+ * Returns the value as a GraphQLStructObjectType, or throws if it is not one.
+ * @param type - The GraphQL type to inspect.
+ * @returns The value typed as a GraphQLStructObjectType.
+ */
+export function assertStructObjectType(type: unknown): GraphQLStructObjectType {
+  if (!isStructObjectType(type)) {
+    throw new Error(
+      `Expected ${inspect(type)} to be a GraphQL Struct Object type.`,
+    );
+  }
+  return type;
+}
+
+/** @private */
 const inputObjectSymbol: unique symbol = Symbol('InputObject');
 
 /**
@@ -965,7 +999,7 @@ export function isInputType(type: unknown): type is GraphQLInputType {
   return (
     isScalarType(type) ||
     isEnumType(type) ||
-    isInputObjectType(type) ||
+    isStructObjectType(type) ||
     (isWrappingType(type) && isInputType(type.ofType))
   );
 }
@@ -1050,6 +1084,7 @@ export function isOutputType(type: unknown): type is GraphQLOutputType {
     isInterfaceType(type) ||
     isUnionType(type) ||
     isEnumType(type) ||
+    (isStructObjectType(type) && !type.isInputObject) ||
     (isWrappingType(type) && isOutputType(type.ofType))
   );
 }
@@ -1678,7 +1713,7 @@ export type GraphQLNamedType = GraphQLNamedInputType | GraphQLNamedOutputType;
 export type GraphQLNamedInputType =
   | GraphQLScalarType
   | GraphQLEnumType
-  | GraphQLInputObjectType;
+  | GraphQLStructObjectType;
 
 /** A named GraphQL type that can be used as an output type. */
 export type GraphQLNamedOutputType =
@@ -1686,7 +1721,8 @@ export type GraphQLNamedOutputType =
   | GraphQLObjectType
   | GraphQLInterfaceType
   | GraphQLUnionType
-  | GraphQLEnumType;
+  | GraphQLEnumType
+  | GraphQLStructObjectType;
 
 /**
  * Returns true when the value is a GraphQL named type.
@@ -1708,7 +1744,7 @@ export function isNamedType(type: unknown): type is GraphQLNamedType {
     isInterfaceType(type) ||
     isUnionType(type) ||
     isEnumType(type) ||
-    isInputObjectType(type)
+    isStructObjectType(type)
   );
 }
 
@@ -4817,10 +4853,111 @@ export interface GraphQLInputObjectTypeExtensions {
 }
 
 /**
+ * Custom extensions for struct object types.
+ * @remarks
+ * Use a unique identifier name for your extension, for example the name of
+ * your library or project. Do not use a shortened identifier as this increases
+ * the risk of conflicts. We recommend you add at most one extension field,
+ * an object which can contain all the values you need.
+ */
+export interface GraphQLStructObjectTypeExtensions {
+  [attributeName: string | symbol]: unknown;
+}
+
+/**
+ * Struct Object Type Definition
+ *
+ * A struct defines a symmetric composite type valid in both input and output
+ * positions. Struct fields are pure data — no per-field resolvers.
+ * @example
+ * ```ts
+ * const GeoPoint = new GraphQLStructObjectType({
+ *   name: 'GeoPoint',
+ *   fields: {
+ *     lat: { type: new GraphQLNonNull(GraphQLFloat) },
+ *     lon: { type: new GraphQLNonNull(GraphQLFloat) },
+ *     alt: { type: GraphQLFloat, default: { value: 0 } },
+ *   },
+ * });
+ * ```
+ */
+export class GraphQLStructObjectType implements GraphQLSchemaElement {
+  /**
+   * Internal runtime marker used to identify GraphQLStructObjectType instances.
+   * @private
+   */
+  readonly __kind: symbol;
+  /** The GraphQL name for this schema element. */
+  name: string;
+  /** Human-readable description for this schema element, if provided. */
+  description: Maybe<string>;
+  /** Custom extension fields reserved for users. */
+  extensions: Readonly<GraphQLStructObjectTypeExtensions>;
+  /** AST node from which this schema element was built, if available. */
+  astNode: Maybe<StructTypeDefinitionNode | InputObjectTypeDefinitionNode>;
+  /** AST extension nodes applied to this schema element. */
+  extensionASTNodes: ReadonlyArray<
+    StructTypeExtensionNode | InputObjectTypeExtensionNode
+  >;
+  /** Whether this struct uses OneOf semantics (exactly one field non-null). */
+  isOneOf: boolean;
+  /** Whether this type was declared with the `input` keyword (legacy). */
+  isInputObject: boolean;
+
+  private _fields: ThunkObjMap<GraphQLInputField>;
+
+  constructor(config: Readonly<GraphQLStructObjectTypeConfig>) {
+    this.__kind = structObjectSymbol;
+    this.name = assertName(config.name);
+    this.description = config.description;
+    this.extensions = toObjMapWithSymbols(config.extensions);
+    this.astNode = config.astNode;
+    this.extensionASTNodes = config.extensionASTNodes ?? [];
+    this.isOneOf = config.isOneOf ?? false;
+    this.isInputObject = config.isInputObject ?? false;
+
+    this._fields = defineInputFieldMap.bind(undefined, this, config.fields);
+  }
+
+  get [Symbol.toStringTag](): string {
+    return 'GraphQLStructObjectType';
+  }
+
+  getFields(): GraphQLInputFieldMap {
+    if (typeof this._fields === 'function') {
+      this._fields = this._fields();
+    }
+    return this._fields;
+  }
+
+  toConfig(): GraphQLStructObjectTypeNormalizedConfig {
+    return {
+      name: this.name,
+      description: this.description,
+      fields: mapValue(this.getFields(), (field) => field.toConfig()),
+      extensions: this.extensions,
+      astNode: this.astNode,
+      extensionASTNodes: this.extensionASTNodes,
+      isOneOf: this.isOneOf,
+      isInputObject: this.isInputObject,
+    };
+  }
+
+  toString(): string {
+    return this.name;
+  }
+
+  toJSON(): string {
+    return this.toString();
+  }
+}
+
+/**
  * Input Object Type Definition
  *
  * An input object defines a structured collection of fields which may be
- * supplied to a field argument.
+ * supplied to a field argument. Input objects are a legacy alias for struct
+ * types restricted to input positions.
  *
  * Using `NonNull` will ensure that a value must be provided by the query
  * @example
@@ -4834,175 +4971,24 @@ export interface GraphQLInputObjectTypeExtensions {
  *   },
  * });
  * ```
+ * @deprecated Use GraphQLStructObjectType instead. Input objects are a legacy
+ * alias for struct types restricted to input positions.
  */
-export class GraphQLInputObjectType implements GraphQLSchemaElement {
-  /**
-   * Internal runtime marker used to identify GraphQLInputObjectType instances.
-   * @private
-   */
-  readonly __kind: symbol;
-  /** The GraphQL name for this schema element. */
-  name: string;
-  /** Human-readable description for this schema element, if provided. */
-  description: Maybe<string>;
-  /** Custom extension fields reserved for users. */
-  extensions: Readonly<GraphQLInputObjectTypeExtensions>;
-  /** AST node from which this schema element was built, if available. */
-  astNode: Maybe<InputObjectTypeDefinitionNode>;
-  /** AST extension nodes applied to this schema element. */
-  extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
-  /** Whether this input object uses the experimental OneOf input object semantics. */
-  isOneOf: boolean;
+export class GraphQLInputObjectType extends GraphQLStructObjectType {
+  declare readonly __kind: symbol;
+  declare astNode: Maybe<InputObjectTypeDefinitionNode>;
+  declare extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
 
-  private _fields: ThunkObjMap<GraphQLInputField>;
-
-  /**
-   * Creates a GraphQLInputObjectType instance.
-   * @param config - Configuration describing this object.
-   * @example
-   * ```ts
-   * import { parse } from 'graphql/language';
-   * import {
-   *   GraphQLID,
-   *   GraphQLInputObjectType,
-   *   GraphQLInt,
-   *   GraphQLNonNull,
-   *   GraphQLString,
-   * } from 'graphql/type';
-   *
-   * const document = parse(`
-   *   input ReviewInput {
-   *     stars: Int!
-   *     commentary: String
-   *   }
-   *
-   *   extend input ReviewInput {
-   *     body: String
-   *   }
-   * `);
-   * const definition = document.definitions[0];
-   *
-   * const ReviewInput = new GraphQLInputObjectType({
-   *   name: 'ReviewInput',
-   *   description: 'Input collected when reviewing a product.',
-   *   fields: {
-   *     stars: {
-   *       description: 'Star rating from one to five.',
-   *       type: new GraphQLNonNull(GraphQLInt),
-   *       extensions: { min: 1, max: 5 },
-   *       astNode: definition.fields[0],
-   *     },
-   *     commentary: {
-   *       type: GraphQLString,
-   *       default: { value: '' },
-   *       deprecationReason: 'Use body.',
-   *       astNode: definition.fields[1],
-   *     },
-   *   },
-   *   extensions: { form: 'review' },
-   *   astNode: definition,
-   *   extensionASTNodes: [document.definitions[1]],
-   *   isOneOf: false,
-   * });
-   * const SearchBy = new GraphQLInputObjectType({
-   *   name: 'SearchBy',
-   *   fields: {
-   *     id: { type: GraphQLID },
-   *     slug: { type: GraphQLString },
-   *   },
-   *   isOneOf: true,
-   * });
-   *
-   * const fields = ReviewInput.getFields();
-   *
-   * ReviewInput.description; // => 'Input collected when reviewing a product.'
-   * String(fields.stars.type); // => 'Int!'
-   * fields.stars.extensions; // => { min: 1, max: 5 }
-   * fields.commentary.default.value; // => ''
-   * fields.commentary.deprecationReason; // => 'Use body.'
-   * ReviewInput.isOneOf; // => false
-   * SearchBy.isOneOf; // => true
-   * ```
-   */
   constructor(config: Readonly<GraphQLInputObjectTypeConfig>) {
+    super({ ...config, isInputObject: true });
     this.__kind = inputObjectSymbol;
-    this.name = assertName(config.name);
-    this.description = config.description;
-    this.extensions = toObjMapWithSymbols(config.extensions);
-    this.astNode = config.astNode;
-    this.extensionASTNodes = config.extensionASTNodes ?? [];
-    this.isOneOf = config.isOneOf ?? false;
-
-    this._fields = defineInputFieldMap.bind(undefined, this, config.fields);
   }
 
-  /**
-   * Returns the value used by `Object.prototype.toString`.
-   * @returns The built-in string tag for this object.
-   */
-  get [Symbol.toStringTag](): string {
+  override get [Symbol.toStringTag](): string {
     return 'GraphQLInputObjectType';
   }
 
-  /**
-   * Returns the fields defined by this type.
-   * @returns The fields keyed by field name.
-   * @example
-   * ```ts
-   * import { buildSchema } from 'graphql/utilities';
-   * import { assertInputObjectType } from 'graphql/type';
-   *
-   * const schema = buildSchema(`
-   *   input ReviewInput {
-   *     stars: Int!
-   *     commentary: String = ""
-   *   }
-   *
-   *   type Query {
-   *     reviews(filter: ReviewInput): [String]
-   *   }
-   * `);
-   *
-   * const ReviewInput = assertInputObjectType(schema.getType('ReviewInput'));
-   * const fields = ReviewInput.getFields();
-   *
-   * Object.keys(fields); // => ['stars', 'commentary']
-   * fields.commentary.default; // => { literal: { kind: 'StringValue', value: '' } }
-   * ```
-   */
-  getFields(): GraphQLInputFieldMap {
-    if (typeof this._fields === 'function') {
-      this._fields = this._fields();
-    }
-    return this._fields;
-  }
-
-  /**
-   * Returns a normalized configuration object for this object.
-   * @returns A configuration object that can be used to recreate this object.
-   * @example
-   * ```ts
-   * import {
-   *   GraphQLInputObjectType,
-   *   GraphQLInt,
-   *   GraphQLNonNull,
-   * } from 'graphql/type';
-   *
-   * const ReviewInput = new GraphQLInputObjectType({
-   *   name: 'ReviewInput',
-   *   fields: {
-   *     stars: { type: new GraphQLNonNull(GraphQLInt) },
-   *   },
-   * });
-   *
-   * const config = ReviewInput.toConfig();
-   * const ReviewInputCopy = new GraphQLInputObjectType(config);
-   *
-   * String(config.fields.stars.type); // => 'Int!'
-   * String(ReviewInputCopy.getFields().stars.type); // => 'Int!'
-   * ```
-   */
-  toConfig(): GraphQLInputObjectTypeNormalizedConfig {
+  override toConfig(): GraphQLInputObjectTypeNormalizedConfig {
     return {
       name: this.name,
       description: this.description,
@@ -5013,59 +4999,10 @@ export class GraphQLInputObjectType implements GraphQLSchemaElement {
       isOneOf: this.isOneOf,
     };
   }
-
-  /**
-   * Returns the schema coordinate identifying this input object type.
-   * @returns The schema coordinate for this input object type.
-   * @example
-   * ```ts
-   * import { buildSchema } from 'graphql/utilities';
-   * import { assertInputObjectType } from 'graphql/type';
-   *
-   * const schema = buildSchema(`
-   *   input ReviewInput {
-   *     stars: Int!
-   *   }
-   *
-   *   type Query {
-   *     reviews(filter: ReviewInput): [String]
-   *   }
-   * `);
-   *
-   * const ReviewInput = assertInputObjectType(schema.getType('ReviewInput'));
-   *
-   * ReviewInput.toString(); // => 'ReviewInput'
-   * ```
-   */
-  toString(): string {
-    return this.name;
-  }
-
-  /**
-   * Returns the JSON representation used when this object is serialized.
-   * @returns The JSON-serializable representation.
-   * @example
-   * ```ts
-   * import { GraphQLInputObjectType, GraphQLString } from 'graphql/type';
-   *
-   * const ReviewInput = new GraphQLInputObjectType({
-   *   name: 'ReviewInput',
-   *   fields: {
-   *     commentary: { type: GraphQLString },
-   *   },
-   * });
-   *
-   * ReviewInput.toJSON(); // => 'ReviewInput'
-   * JSON.stringify({ type: ReviewInput }); // => '{"type":"ReviewInput"}'
-   * ```
-   */
-  toJSON(): string {
-    return this.toString();
-  }
 }
 
 function defineInputFieldMap(
-  parentType: GraphQLInputObjectType,
+  parentType: GraphQLStructObjectType,
   fields: ThunkObjMap<GraphQLInputFieldConfig>,
 ): GraphQLInputFieldMap {
   const fieldMap = resolveObjMapThunk(fields);
@@ -5076,26 +5013,50 @@ function defineInputFieldMap(
   );
 }
 
-/** Configuration used to construct a GraphQLInputObjectType. */
-export interface GraphQLInputObjectTypeConfig {
+/** Configuration used to construct a GraphQLStructObjectType. */
+export interface GraphQLStructObjectTypeConfig {
   /** The GraphQL name for this schema element. */
   name: string;
   /** Human-readable description for this schema element, if provided. */
   description?: Maybe<string>;
-  /** Fields declared by this object, interface, input object, or literal. */
+  /** Fields declared by this struct type. */
   fields: ThunkObjMap<GraphQLInputFieldConfig>;
   /** Custom extension fields reserved for users. */
-  extensions?: Maybe<Readonly<GraphQLInputObjectTypeExtensions>>;
+  extensions?: Maybe<Readonly<GraphQLStructObjectTypeExtensions>>;
+  /** AST node from which this schema element was built, if available. */
+  astNode?: Maybe<StructTypeDefinitionNode | InputObjectTypeDefinitionNode>;
+  /** AST extension nodes applied to this schema element. */
+  extensionASTNodes?: Maybe<
+    ReadonlyArray<StructTypeExtensionNode | InputObjectTypeExtensionNode>
+  >;
+  /** Whether this struct uses OneOf semantics. */
+  isOneOf?: boolean;
+  /** Whether this type was declared with the `input` keyword (legacy). */
+  isInputObject?: boolean;
+}
+
+/** @internal */
+export interface GraphQLStructObjectTypeNormalizedConfig
+  extends GraphQLStructObjectTypeConfig {
+  fields: GraphQLInputFieldNormalizedConfigMap;
+  extensions: Readonly<GraphQLStructObjectTypeExtensions>;
+  extensionASTNodes: ReadonlyArray<
+    StructTypeExtensionNode | InputObjectTypeExtensionNode
+  >;
+}
+
+/** Configuration used to construct a GraphQLInputObjectType. */
+export interface GraphQLInputObjectTypeConfig
+  extends Omit<GraphQLStructObjectTypeConfig, 'astNode' | 'extensionASTNodes' | 'isInputObject'> {
   /** AST node from which this schema element was built, if available. */
   astNode?: Maybe<InputObjectTypeDefinitionNode>;
   /** AST extension nodes applied to this schema element. */
   extensionASTNodes?: Maybe<ReadonlyArray<InputObjectTypeExtensionNode>>;
-  /** Whether this input object uses the experimental OneOf input object semantics. */
-  isOneOf?: boolean;
 }
 
 /** @internal */
-export interface GraphQLInputObjectTypeNormalizedConfig extends GraphQLInputObjectTypeConfig {
+export interface GraphQLInputObjectTypeNormalizedConfig
+  extends Omit<GraphQLInputObjectTypeConfig, 'fields' | 'extensions' | 'extensionASTNodes'> {
   fields: GraphQLInputFieldNormalizedConfigMap;
   extensions: Readonly<GraphQLInputObjectTypeExtensions>;
   extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
@@ -5155,8 +5116,8 @@ export class GraphQLInputField implements GraphQLSchemaElement {
    * @private
    */
   readonly __kind: symbol;
-  /** Input object type that owns this input field. */
-  parentType: GraphQLInputObjectType;
+  /** Struct or input object type that owns this input field. */
+  parentType: GraphQLStructObjectType;
   /** The GraphQL name for this schema element. */
   name: string;
   /** Human-readable description for this schema element, if provided. */
@@ -5211,7 +5172,7 @@ export class GraphQLInputField implements GraphQLSchemaElement {
    * ```
    */
   constructor(
-    parentType: GraphQLInputObjectType,
+    parentType: GraphQLStructObjectType,
     name: string,
     config: GraphQLInputFieldConfig,
   ) {

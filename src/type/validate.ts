@@ -61,6 +61,7 @@ import {
   isOutputType,
   isRequiredArgument,
   isRequiredInputField,
+  isStructObjectType,
   isUnionType,
 } from './definition.ts';
 import { GraphQLDeprecatedDirective, isDirective } from './directives.ts';
@@ -373,7 +374,7 @@ function uncoerceDefaultValue(value: unknown, type: GraphQLInputType): unknown {
     return [uncoerceDefaultValue(value, type.ofType)];
   }
 
-  if (isInputObjectType(type)) {
+  if (isStructObjectType(type)) {
     invariant(isObjectLike(value));
     const fieldDefs = type.getFields();
     return mapValue(value, (fieldValue, fieldName) => {
