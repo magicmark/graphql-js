@@ -20,10 +20,10 @@ import { print } from '../language/printer.ts';
 import type { GraphQLInputType } from '../type/definition.ts';
 import {
   assertLeafType,
-  isStructObjectType,
   isListType,
   isNonNullType,
   isRequiredInputField,
+  isStructObjectType,
 } from '../type/definition.ts';
 
 import type { FragmentVariableValues } from '../execution/collectFields.ts';

@@ -43,8 +43,8 @@ import type {
   GraphQLInputField,
   GraphQLInputType,
   GraphQLInterfaceType,
-  GraphQLStructObjectType,
   GraphQLObjectType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from './definition.ts';
 import {
