@@ -610,6 +610,15 @@ const structObjectSymbol: unique symbol = Symbol('StructObject');
  * GraphQLInputObjectType, which is a subclass).
  * @param type - The GraphQL type to inspect.
  * @returns True when the value is a GraphQLStructObjectType.
+ * @example
+ * ```ts
+ * import { buildSchema } from 'graphql/utilities';
+ * import { isStructObjectType } from 'graphql/type';
+ *
+ * const schema = buildSchema('struct Coord { x: Int y: Int }');
+ *
+ * isStructObjectType(schema.getType('Coord')); // => true
+ * ```
  */
 export function isStructObjectType(
   type: unknown,
@@ -624,6 +633,15 @@ export function isStructObjectType(
  * Returns the value as a GraphQLStructObjectType, or throws if it is not one.
  * @param type - The GraphQL type to inspect.
  * @returns The value typed as a GraphQLStructObjectType.
+ * @example
+ * ```ts
+ * import { buildSchema } from 'graphql/utilities';
+ * import { assertStructObjectType } from 'graphql/type';
+ *
+ * const schema = buildSchema('struct Coord { x: Int y: Int }');
+ *
+ * assertStructObjectType(schema.getType('Coord')); // => GraphQLStructObjectType
+ * ```
  */
 export function assertStructObjectType(type: unknown): GraphQLStructObjectType {
   if (!isStructObjectType(type)) {
@@ -4868,7 +4886,7 @@ export interface GraphQLStructObjectTypeExtensions {
  * Struct Object Type Definition
  *
  * A struct defines a symmetric composite type valid in both input and output
- * positions. Struct fields are pure data — no per-field resolvers.
+ * positions. Struct fields are pure data -- no per-field resolvers.
  * @example
  * ```ts
  * const GeoPoint = new GraphQLStructObjectType({
@@ -4906,6 +4924,24 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
 
   private _fields: ThunkObjMap<GraphQLInputField>;
 
+  /**
+   * Creates a GraphQLStructObjectType instance.
+   * @param config - Configuration describing this struct type.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLNonNull, GraphQLStructObjectType } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLStructObjectType({
+   *   name: 'GeoPoint',
+   *   fields: {
+   *     lat: { type: new GraphQLNonNull(GraphQLFloat) },
+   *     lon: { type: new GraphQLNonNull(GraphQLFloat) },
+   *   },
+   * });
+   *
+   * GeoPoint.name; // => 'GeoPoint'
+   * ```
+   */
   constructor(config: Readonly<GraphQLStructObjectTypeConfig>) {
     this.__kind = structObjectSymbol;
     this.name = assertName(config.name);
@@ -4919,10 +4955,29 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
     this._fields = defineInputFieldMap.bind(undefined, this, config.fields);
   }
 
+  /**
+   * Returns the value used by `Object.prototype.toString`.
+   * @returns The built-in string tag for this object.
+   */
   get [Symbol.toStringTag](): string {
     return 'GraphQLStructObjectType';
   }
 
+  /**
+   * Returns the fields defined by this struct type.
+   * @returns The fields keyed by field name.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLNonNull, GraphQLStructObjectType } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLStructObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: new GraphQLNonNull(GraphQLFloat) } },
+   * });
+   *
+   * Object.keys(GeoPoint.getFields()); // => ['lat']
+   * ```
+   */
   getFields(): GraphQLInputFieldMap {
     if (typeof this._fields === 'function') {
       this._fields = this._fields();
@@ -4930,6 +4985,21 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
     return this._fields;
   }
 
+  /**
+   * Returns a normalized configuration object for this struct type.
+   * @returns A configuration object that can be used to recreate this struct type.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLNonNull, GraphQLStructObjectType } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLStructObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: new GraphQLNonNull(GraphQLFloat) } },
+   * });
+   *
+   * GeoPoint.toConfig().name; // => 'GeoPoint'
+   * ```
+   */
   toConfig(): GraphQLStructObjectTypeNormalizedConfig {
     return {
       name: this.name,
@@ -4943,10 +5013,40 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
     };
   }
 
+  /**
+   * Returns the name of this struct type.
+   * @returns The struct type name.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLStructObjectType } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLStructObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: GraphQLFloat } },
+   * });
+   *
+   * GeoPoint.toString(); // => 'GeoPoint'
+   * ```
+   */
   toString(): string {
     return this.name;
   }
 
+  /**
+   * Returns the JSON representation used when this object is serialized.
+   * @returns The JSON-serializable representation.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLStructObjectType } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLStructObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: GraphQLFloat } },
+   * });
+   *
+   * GeoPoint.toJSON(); // => 'GeoPoint'
+   * ```
+   */
   toJSON(): string {
     return this.toString();
   }
@@ -4975,19 +5075,59 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
  * alias for struct types restricted to input positions.
  */
 export class GraphQLInputObjectType extends GraphQLStructObjectType {
+  /**
+   * Internal runtime marker used to identify GraphQLInputObjectType instances.
+   * @private
+   */
   declare readonly __kind: symbol;
+  /** AST node from which this schema element was built, if available. */
   declare astNode: Maybe<InputObjectTypeDefinitionNode>;
+  /** AST extension nodes applied to this schema element. */
   declare extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
 
+  /**
+   * Creates a GraphQLInputObjectType instance.
+   * @param config - Configuration describing this input object.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLInputObjectType, GraphQLNonNull } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLInputObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: new GraphQLNonNull(GraphQLFloat) } },
+   * });
+   *
+   * GeoPoint.name; // => 'GeoPoint'
+   * ```
+   */
   constructor(config: Readonly<GraphQLInputObjectTypeConfig>) {
     super({ ...config, isInputObject: true });
     this.__kind = inputObjectSymbol;
   }
 
+  /**
+   * Returns the value used by `Object.prototype.toString`.
+   * @returns The built-in string tag for this object.
+   */
   override get [Symbol.toStringTag](): string {
     return 'GraphQLInputObjectType';
   }
 
+  /**
+   * Returns a normalized configuration object for this input object type.
+   * @returns A configuration object that can be used to recreate this type.
+   * @example
+   * ```ts
+   * import { GraphQLFloat, GraphQLInputObjectType, GraphQLNonNull } from 'graphql/type';
+   *
+   * const GeoPoint = new GraphQLInputObjectType({
+   *   name: 'GeoPoint',
+   *   fields: { lat: { type: new GraphQLNonNull(GraphQLFloat) } },
+   * });
+   *
+   * GeoPoint.toConfig().name; // => 'GeoPoint'
+   * ```
+   */
   override toConfig(): GraphQLInputObjectTypeNormalizedConfig {
     return {
       name: this.name,
