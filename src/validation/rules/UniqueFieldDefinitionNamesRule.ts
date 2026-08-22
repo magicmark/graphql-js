@@ -108,11 +108,7 @@ export function UniqueFieldDefinitionNamesRule(
 }
 
 function hasField(type: GraphQLNamedType, fieldName: string): boolean {
-  if (
-    isObjectType(type) ||
-    isInterfaceType(type) ||
-    isStructObjectType(type)
-  ) {
+  if (isObjectType(type) || isInterfaceType(type) || isStructObjectType(type)) {
     return type.getFields()[fieldName] != null;
   }
   return false;

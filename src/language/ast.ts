@@ -990,7 +990,6 @@ export interface EnumValueDefinitionNode {
   readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
 }
 
-/** An input object type definition in a type-system document. */
 /** A struct type definition in a type-system document. */
 export interface StructTypeDefinitionNode {
   /** The discriminator identifying the concrete AST or introspection kind. */
@@ -1007,6 +1006,7 @@ export interface StructTypeDefinitionNode {
   readonly fields?: ReadonlyArray<InputValueDefinitionNode> | undefined;
 }
 
+/** An input object type definition in a type-system document. */
 export interface InputObjectTypeDefinitionNode {
   /** The discriminator identifying the concrete AST or introspection kind. */
   readonly kind: KindTypeMap['INPUT_OBJECT_TYPE_DEFINITION'];

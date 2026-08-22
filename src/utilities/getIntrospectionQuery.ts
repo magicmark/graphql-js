@@ -351,7 +351,6 @@ export interface IntrospectionEnumType {
   readonly enumValues: ReadonlyArray<IntrospectionEnumValue>;
 }
 
-/** The introspection representation of an input object type. */
 /** The introspection representation of a struct type. */
 export interface IntrospectionStructObjectType {
   /** The introspection kind discriminator for this type reference or type. */
@@ -366,6 +365,7 @@ export interface IntrospectionStructObjectType {
   readonly isOneOf: boolean;
 }
 
+/** The introspection representation of an input object type. */
 export interface IntrospectionInputObjectType {
   /** The introspection kind discriminator for this type reference or type. */
   readonly kind: typeof TypeKind.INPUT_OBJECT;

@@ -862,6 +862,10 @@ describe('extendSchema', () => {
       input SomeInput {
         oldField: String
       }
+
+      struct SomeStruct {
+        oldField: String
+      }
     `);
     const newTypesSDL = dedent`
       scalar NewScalar
@@ -882,6 +886,10 @@ describe('extendSchema', () => {
 
       interface AnotherNewInterface {
         anotherNewField: String
+      }
+
+      struct NewStruct {
+        foo: String
       }
     `;
     const schemaWithNewTypes = extendSchema(schema, parse(newTypesSDL));
@@ -917,6 +925,14 @@ describe('extendSchema', () => {
       extend input SomeInput {
         anotherNewField: String
       }
+
+      extend struct SomeStruct {
+        newField: String
+      }
+
+      extend struct SomeStruct {
+        anotherNewField: String
+      }
     `);
     const extendedSchema = extendSchema(schemaWithNewTypes, extendAST);
 
@@ -939,6 +955,12 @@ describe('extendSchema', () => {
       union SomeUnion = SomeObject | NewObject | AnotherNewObject
 
       input SomeInput {
+        oldField: String
+        newField: String
+        anotherNewField: String
+      }
+
+      struct SomeStruct {
         oldField: String
         newField: String
         anotherNewField: String

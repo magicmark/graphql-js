@@ -1,3 +1,4 @@
+/* eslint-disable import/no-deprecated */
 import { describe, it } from 'node:test';
 
 import { assert, expect } from 'chai';
@@ -882,6 +883,35 @@ describe('Type System: Input Objects must have fields', () => {
       {
         message:
           'Input Object type SomeInputObject must define one or more fields.',
+        locations: [
+          { line: 6, column: 7 },
+          { line: 4, column: 9 },
+        ],
+      },
+    ]);
+  });
+
+  it('rejects a Struct Object type with missing fields', () => {
+    let schema = buildSchema(`
+      type Query {
+        field(arg: SomeStructObject): String
+      }
+
+      struct SomeStructObject
+    `);
+
+    schema = extendSchema(
+      schema,
+      parse(`
+        directive @test on STRUCT
+
+        extend struct SomeStructObject @test
+      `),
+    );
+
+    expectJSON(validateSchema(schema)).toDeepEqual([
+      {
+        message: 'Struct type SomeStructObject must define one or more fields.',
         locations: [
           { line: 6, column: 7 },
           { line: 4, column: 9 },
@@ -2416,6 +2446,19 @@ describe('Type System: OneOf Input Object fields must be nullable', () => {
       }
 
       input A @oneOf {
+        a: Int
+      }
+    `);
+    expectJSON(validateSchema(schema)).toDeepEqual([]);
+  });
+
+  it('accepts a OneOf Struct Object with a scalar field', () => {
+    const schema = buildSchema(`
+      type Query {
+        test(arg: A): Int
+      }
+
+      struct A @oneOf {
         a: Int
       }
     `);

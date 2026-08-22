@@ -57,6 +57,7 @@ const schemaWithSDLDirectives = buildSchema(`
   directive @onUnion on UNION
   directive @onEnum on ENUM
   directive @onEnumValue on ENUM_VALUE
+  directive @onStruct on STRUCT
   directive @onInputObject on INPUT_OBJECT
   directive @onInputFieldDefinition on INPUT_FIELD_DEFINITION
   directive @onDirective on DIRECTIVE_DEFINITION
@@ -350,6 +351,14 @@ describe('Validate: Known directives', () => {
           }
 
           extend enum MyEnum @onEnum
+
+          struct MyStruct @onStruct {
+            myField: Int @onInputFieldDefinition
+          }
+
+          extend struct MyStruct @onStruct {
+            myExtensionField: Int @onInputFieldDefinition
+          }
 
           input MyInput @onInputObject {
             myField: Int @onInputFieldDefinition

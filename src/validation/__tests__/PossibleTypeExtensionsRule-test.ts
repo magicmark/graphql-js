@@ -179,6 +179,22 @@ describe('Validate: Possible type extensions', () => {
     ]);
   });
 
+  it('reports struct extensions of non-struct types', () => {
+    expectSDLErrors(`
+      input FooInputObject
+
+      extend struct FooInputObject @dummy
+    `).toDeepEqual([
+      {
+        message: 'Cannot extend non-struct type "FooInputObject".',
+        locations: [
+          { line: 2, column: 7 },
+          { line: 4, column: 7 },
+        ],
+      },
+    ]);
+  });
+
   it('extending types within existing schema', () => {
     const schema = buildSchema(`
       scalar FooScalar

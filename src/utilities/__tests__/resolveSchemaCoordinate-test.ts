@@ -1,3 +1,4 @@
+/* eslint-disable import/no-deprecated */
 import { describe, it } from 'node:test';
 
 import { assert, expect } from 'chai';

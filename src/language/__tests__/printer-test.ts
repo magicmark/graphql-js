@@ -27,6 +27,30 @@ describe('Printer: Query document', () => {
     );
   });
 
+  it('prints struct definitions and extensions', () => {
+    const ast = parse(`
+      """Reusable filters."""
+      struct SearchFilter @oneOf {
+        text: String
+      }
+
+      extend struct SearchFilter @deprecated(reason: "Use NewSearchFilter") {
+        oldText: String
+      }
+    `);
+
+    expect(print(ast)).to.equal(dedent`
+      """Reusable filters."""
+      struct SearchFilter @oneOf {
+        text: String
+      }
+
+      extend struct SearchFilter @deprecated(reason: "Use NewSearchFilter") {
+        oldText: String
+      }
+    `);
+  });
+
   it('correctly prints non-query operations without name', () => {
     const queryASTShorthanded = parse('query { id, name }');
     expect(print(queryASTShorthanded)).to.equal(dedent`

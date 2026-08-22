@@ -8,6 +8,7 @@ import { DirectiveLocation } from '../../language/directiveLocation.ts';
 
 import {
   assertEnumType,
+  assertStructObjectType,
   GraphQLEnumType,
   GraphQLObjectType,
 } from '../../type/definition.ts';
@@ -63,6 +64,31 @@ describe('Type System: build schema from introspection', () => {
       }
     `;
 
+    expect(cycleIntrospection(sdl)).to.equal(sdl);
+  });
+
+  it('builds a schema with a struct object', () => {
+    const sdl = dedent`
+      type Query {
+        search(filter: SearchFilter): String
+      }
+
+      """Reusable search filters."""
+      struct SearchFilter {
+        """Search text."""
+        text: String
+        limit: Int
+      }
+    `;
+
+    const schema = buildSchema(sdl);
+    const introspection = introspectionFromSchema(schema);
+    const clientSchema = buildClientSchema(introspection);
+    const searchFilter = assertStructObjectType(
+      clientSchema.getType('SearchFilter'),
+    );
+
+    expect(searchFilter.getFields()).to.have.keys(['text', 'limit']);
     expect(cycleIntrospection(sdl)).to.equal(sdl);
   });
 
@@ -694,6 +720,10 @@ describe('Type System: build schema from introspection', () => {
         foo: String
       }
 
+      struct SomeStructObject {
+        foo: String
+      }
+
       directive @SomeDirective on QUERY
     `);
 
@@ -909,6 +939,40 @@ describe('Type System: build schema from introspection', () => {
 
       expect(() => buildClientSchema(introspection)).to.throw(
         /Introspection result missing inputFields: { kind: "INPUT_OBJECT", name: "SomeInputObject", .* }\./,
+      );
+    });
+
+    it('throws when missing struct fields', () => {
+      const introspection = introspectionFromSchema(dummySchema);
+      const someStructObjectIntrospection = introspection.__schema.types.find(
+        ({ name }) => name === 'SomeStructObject',
+      );
+
+      assert(someStructObjectIntrospection?.kind === 'STRUCT_OBJECT');
+      // @ts-expect-error
+      delete someStructObjectIntrospection.fields;
+
+      expect(() => buildClientSchema(introspection)).to.throw(
+        /Introspection result missing fields: { kind: "STRUCT_OBJECT", name: "SomeStructObject", .* }\./,
+      );
+    });
+
+    it('throws when output type is used as a struct field type', () => {
+      const introspection = introspectionFromSchema(dummySchema);
+      const someStructObjectIntrospection = introspection.__schema.types.find(
+        ({ name }) => name === 'SomeStructObject',
+      );
+
+      assert(someStructObjectIntrospection?.kind === 'STRUCT_OBJECT');
+      const fieldType = someStructObjectIntrospection.fields[0].type;
+      assert(fieldType.kind === 'SCALAR');
+
+      expect(fieldType).to.have.property('name', 'String');
+      // @ts-expect-error
+      fieldType.name = 'SomeUnion';
+
+      expect(() => buildClientSchema(introspection)).to.throw(
+        'Introspection must provide input type for struct fields, but received: SomeUnion.',
       );
     });
 

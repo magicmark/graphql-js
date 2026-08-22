@@ -14,6 +14,72 @@ import { graphqlSync } from '../../graphql.ts';
 import type { GraphQLResolveInfo } from '../definition.ts';
 
 describe('Introspection', () => {
+  it('introspects struct object fields', () => {
+    const schema = buildSchema(`
+      type Query {
+        search(filter: SearchFilter): String
+      }
+
+      struct SearchFilter {
+        text: String
+        oldText: String @deprecated(reason: "Use text")
+      }
+    `);
+
+    const result = graphqlSync({
+      schema,
+      source: `
+        {
+          __type(name: "SearchFilter") {
+            kind
+            isOneOf
+            fields {
+              name
+            }
+            allFields: fields(includeDeprecated: true) {
+              name
+              args { name }
+              isDeprecated
+              deprecationReason
+            }
+            inputFields { name }
+            interfaces { name }
+            enumValues { name }
+            possibleTypes { name }
+          }
+        }
+      `,
+    });
+
+    expect(result).to.deep.equal({
+      data: {
+        __type: {
+          kind: 'STRUCT_OBJECT',
+          isOneOf: false,
+          fields: [{ name: 'text' }],
+          allFields: [
+            {
+              name: 'text',
+              args: [],
+              isDeprecated: false,
+              deprecationReason: null,
+            },
+            {
+              name: 'oldText',
+              args: [],
+              isDeprecated: true,
+              deprecationReason: 'Use text',
+            },
+          ],
+          inputFields: null,
+          interfaces: null,
+          enumValues: null,
+          possibleTypes: null,
+        },
+      },
+    });
+  });
+
   it('executes an introspection query', () => {
     const schema = buildSchema(`
       type SomeObject {

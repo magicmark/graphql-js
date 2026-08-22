@@ -678,6 +678,13 @@ describe('Schema Parser', () => {
     });
   });
 
+  it('Struct extension without directives or fields', () => {
+    expectSyntaxError('extend struct Hello').to.deep.equal({
+      message: 'Syntax Error: Unexpected <EOF>.',
+      locations: [{ line: 1, column: 20 }],
+    });
+  });
+
   it('Simple interface', () => {
     const doc = parse(dedent`
       interface Hello {

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-deprecated */
 import { describe, it } from 'node:test';
 
 import { expect } from 'chai';
@@ -17,6 +18,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from '../../type/definition.ts';
 import { GraphQLDirective } from '../../type/directives.ts';
@@ -129,6 +131,47 @@ describe('Type System Printer', () => {
     expectPrintedSchema(schema).to.equal(dedent`
       type Foo {
         str: String
+      }
+    `);
+  });
+
+  it('Print Struct Object Field', () => {
+    const GeoPoint = new GraphQLStructObjectType({
+      name: 'GeoPoint',
+      description: 'A geographic point.',
+      fields: {
+        lat: {
+          description: 'Latitude.',
+          type: new GraphQLNonNull(GraphQLInt),
+        },
+        lon: { type: new GraphQLNonNull(GraphQLInt) },
+      },
+    });
+    const schema = new GraphQLSchema({ types: [GeoPoint] });
+
+    expectPrintedSchema(schema).to.equal(dedent`
+      """A geographic point."""
+      struct GeoPoint {
+        """Latitude."""
+        lat: Int!
+        lon: Int!
+      }
+    `);
+  });
+
+  it('Print OneOf Struct Object Field', () => {
+    const SearchFilter = new GraphQLStructObjectType({
+      name: 'SearchFilter',
+      fields: {
+        text: { type: GraphQLString },
+      },
+      isOneOf: true,
+    });
+    const schema = new GraphQLSchema({ types: [SearchFilter] });
+
+    expectPrintedSchema(schema).to.equal(dedent`
+      struct SearchFilter @oneOf {
+        text: String
       }
     `);
   });

@@ -5176,8 +5176,7 @@ export interface GraphQLStructObjectTypeConfig {
 }
 
 /** @internal */
-export interface GraphQLStructObjectTypeNormalizedConfig
-  extends GraphQLStructObjectTypeConfig {
+export interface GraphQLStructObjectTypeNormalizedConfig extends GraphQLStructObjectTypeConfig {
   fields: GraphQLInputFieldNormalizedConfigMap;
   extensions: Readonly<GraphQLStructObjectTypeExtensions>;
   extensionASTNodes: ReadonlyArray<
@@ -5186,8 +5185,10 @@ export interface GraphQLStructObjectTypeNormalizedConfig
 }
 
 /** Configuration used to construct a GraphQLInputObjectType. */
-export interface GraphQLInputObjectTypeConfig
-  extends Omit<GraphQLStructObjectTypeConfig, 'astNode' | 'extensionASTNodes' | 'isInputObject'> {
+export interface GraphQLInputObjectTypeConfig extends Omit<
+  GraphQLStructObjectTypeConfig,
+  'astNode' | 'extensionASTNodes' | 'isInputObject'
+> {
   /** AST node from which this schema element was built, if available. */
   astNode?: Maybe<InputObjectTypeDefinitionNode>;
   /** AST extension nodes applied to this schema element. */
@@ -5195,8 +5196,10 @@ export interface GraphQLInputObjectTypeConfig
 }
 
 /** @internal */
-export interface GraphQLInputObjectTypeNormalizedConfig
-  extends Omit<GraphQLInputObjectTypeConfig, 'fields' | 'extensions' | 'extensionASTNodes'> {
+export interface GraphQLInputObjectTypeNormalizedConfig extends Omit<
+  GraphQLInputObjectTypeConfig,
+  'fields' | 'extensions' | 'extensionASTNodes'
+> {
   fields: GraphQLInputFieldNormalizedConfigMap;
   extensions: Readonly<GraphQLInputObjectTypeExtensions>;
   extensionASTNodes: ReadonlyArray<InputObjectTypeExtensionNode>;
