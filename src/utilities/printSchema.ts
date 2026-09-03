@@ -1,5 +1,4 @@
 /** @category Schema Printing */
-/* eslint-disable import/no-deprecated */
 
 import { inspect } from '../jsutils/inspect.ts';
 import { invariant } from '../jsutils/invariant.ts';

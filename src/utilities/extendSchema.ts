@@ -1,5 +1,4 @@
 /** @category Schema Construction */
-/* eslint-disable import/no-deprecated */
 
 import { AccumulatorMap } from '../jsutils/AccumulatorMap.ts';
 import { invariant } from '../jsutils/invariant.ts';

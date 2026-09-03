@@ -1,4 +1,3 @@
-/* eslint-disable import/no-deprecated */
 import { describe, it } from 'node:test';
 
 import { expect } from 'chai';

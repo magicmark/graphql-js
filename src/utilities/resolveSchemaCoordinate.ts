@@ -1,5 +1,4 @@
 /** @category Schema Coordinates */
-/* eslint-disable import/no-deprecated */
 
 import { inspect } from '../jsutils/inspect.ts';
 

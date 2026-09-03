@@ -1,5 +1,4 @@
 /** @category Introspection */
-/* eslint-disable import/no-deprecated */
 
 import { devAssert } from '../jsutils/devAssert.ts';
 import { inspect } from '../jsutils/inspect.ts';

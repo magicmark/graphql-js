@@ -5071,8 +5071,6 @@ export class GraphQLStructObjectType implements GraphQLSchemaElement {
  *   },
  * });
  * ```
- * @deprecated Use GraphQLStructObjectType instead. Input objects are a legacy
- * alias for struct types restricted to input positions.
  */
 export class GraphQLInputObjectType extends GraphQLStructObjectType {
   /**
