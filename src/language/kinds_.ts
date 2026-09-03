@@ -175,6 +175,11 @@ export const ENUM_VALUE_DEFINITION = 'EnumValueDefinition';
 /** Type of the `Kind.ENUM_VALUE_DEFINITION` AST kind value. */
 export type ENUM_VALUE_DEFINITION = typeof ENUM_VALUE_DEFINITION;
 
+/** AST kind for struct type definition nodes. */
+export const STRUCT_TYPE_DEFINITION = 'StructTypeDefinition';
+/** Type of the `Kind.STRUCT_TYPE_DEFINITION` AST kind value. */
+export type STRUCT_TYPE_DEFINITION = typeof STRUCT_TYPE_DEFINITION;
+
 /** AST kind for input object type definition nodes. */
 export const INPUT_OBJECT_TYPE_DEFINITION = 'InputObjectTypeDefinition';
 /** Type of the `Kind.INPUT_OBJECT_TYPE_DEFINITION` AST kind value. */
@@ -219,6 +224,11 @@ export type UNION_TYPE_EXTENSION = typeof UNION_TYPE_EXTENSION;
 export const ENUM_TYPE_EXTENSION = 'EnumTypeExtension';
 /** Type of the `Kind.ENUM_TYPE_EXTENSION` AST kind value. */
 export type ENUM_TYPE_EXTENSION = typeof ENUM_TYPE_EXTENSION;
+
+/** AST kind for struct type extension nodes. */
+export const STRUCT_TYPE_EXTENSION = 'StructTypeExtension';
+/** Type of the `Kind.STRUCT_TYPE_EXTENSION` AST kind value. */
+export type STRUCT_TYPE_EXTENSION = typeof STRUCT_TYPE_EXTENSION;
 
 /** AST kind for input object type extension nodes. */
 export const INPUT_OBJECT_TYPE_EXTENSION = 'InputObjectTypeExtension';

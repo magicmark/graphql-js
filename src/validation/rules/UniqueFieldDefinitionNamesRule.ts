@@ -11,9 +11,9 @@ import type { ASTVisitor } from '../../language/visitor.ts';
 
 import type { GraphQLNamedType } from '../../type/definition.ts';
 import {
-  isInputObjectType,
   isInterfaceType,
   isObjectType,
+  isStructObjectType,
 } from '../../type/definition.ts';
 
 import type { SDLValidationContext } from '../ValidationContext.ts';
@@ -51,6 +51,8 @@ export function UniqueFieldDefinitionNamesRule(
   const knownFieldNames = new Map<string, Map<string, NameNode>>();
 
   return {
+    StructTypeDefinition: checkFieldUniqueness,
+    StructTypeExtension: checkFieldUniqueness,
     InputObjectTypeDefinition: checkFieldUniqueness,
     InputObjectTypeExtension: checkFieldUniqueness,
     InterfaceTypeDefinition: checkFieldUniqueness,
@@ -106,7 +108,7 @@ export function UniqueFieldDefinitionNamesRule(
 }
 
 function hasField(type: GraphQLNamedType, fieldName: string): boolean {
-  if (isObjectType(type) || isInterfaceType(type) || isInputObjectType(type)) {
+  if (isObjectType(type) || isInterfaceType(type) || isStructObjectType(type)) {
     return type.getFields()[fieldName] != null;
   }
   return false;

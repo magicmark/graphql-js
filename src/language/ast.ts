@@ -226,6 +226,7 @@ export type ASTNode =
   | UnionTypeDefinitionNode
   | EnumTypeDefinitionNode
   | EnumValueDefinitionNode
+  | StructTypeDefinitionNode
   | InputObjectTypeDefinitionNode
   | DirectiveDefinitionNode
   | SchemaExtensionNode
@@ -234,6 +235,7 @@ export type ASTNode =
   | InterfaceTypeExtensionNode
   | UnionTypeExtensionNode
   | EnumTypeExtensionNode
+  | StructTypeExtensionNode
   | InputObjectTypeExtensionNode
   | DirectiveExtensionNode
   | TypeCoordinateNode
@@ -338,6 +340,7 @@ export const QueryDocumentKeys: {
   UnionTypeDefinition: ['description', 'name', 'directives', 'types'],
   EnumTypeDefinition: ['description', 'name', 'directives', 'values'],
   EnumValueDefinition: ['description', 'name', 'directives'],
+  StructTypeDefinition: ['description', 'name', 'directives', 'fields'],
   InputObjectTypeDefinition: ['description', 'name', 'directives', 'fields'],
 
   DirectiveDefinition: [
@@ -356,6 +359,7 @@ export const QueryDocumentKeys: {
   InterfaceTypeExtension: ['name', 'interfaces', 'directives', 'fields'],
   UnionTypeExtension: ['name', 'directives', 'types'],
   EnumTypeExtension: ['name', 'directives', 'values'],
+  StructTypeExtension: ['name', 'directives', 'fields'],
   InputObjectTypeExtension: ['name', 'directives', 'fields'],
 
   TypeCoordinate: ['name'],
@@ -851,6 +855,7 @@ export type TypeDefinitionNode =
   | InterfaceTypeDefinitionNode
   | UnionTypeDefinitionNode
   | EnumTypeDefinitionNode
+  | StructTypeDefinitionNode
   | InputObjectTypeDefinitionNode;
 
 /** A scalar type definition in a type-system document. */
@@ -985,6 +990,22 @@ export interface EnumValueDefinitionNode {
   readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
 }
 
+/** A struct type definition in a type-system document. */
+export interface StructTypeDefinitionNode {
+  /** The discriminator identifying the concrete AST or introspection kind. */
+  readonly kind: KindTypeMap['STRUCT_TYPE_DEFINITION'];
+  /** The source location for this AST node, if location tracking was enabled. */
+  readonly loc?: Location | undefined;
+  /** The optional GraphQL description associated with this definition. */
+  readonly description?: StringValueNode | undefined;
+  /** Name node identifying this AST node. */
+  readonly name: NameNode;
+  /** Directives available in this schema or applied to this AST node. */
+  readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
+  /** Fields declared by this struct type. */
+  readonly fields?: ReadonlyArray<InputValueDefinitionNode> | undefined;
+}
+
 /** An input object type definition in a type-system document. */
 export interface InputObjectTypeDefinitionNode {
   /** The discriminator identifying the concrete AST or introspection kind. */
@@ -1054,6 +1075,7 @@ export type TypeExtensionNode =
   | InterfaceTypeExtensionNode
   | UnionTypeExtensionNode
   | EnumTypeExtensionNode
+  | StructTypeExtensionNode
   | InputObjectTypeExtensionNode;
 
 /** A scalar type extension. */
@@ -1126,6 +1148,20 @@ export interface EnumTypeExtensionNode {
   readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
   /** Values contained in this enum, list, or input-object definition. */
   readonly values?: ReadonlyArray<EnumValueDefinitionNode> | undefined;
+}
+
+/** A struct type extension. */
+export interface StructTypeExtensionNode {
+  /** The discriminator identifying the concrete AST or introspection kind. */
+  readonly kind: KindTypeMap['STRUCT_TYPE_EXTENSION'];
+  /** The source location for this AST node, if location tracking was enabled. */
+  readonly loc?: Location | undefined;
+  /** Name node identifying this AST node. */
+  readonly name: NameNode;
+  /** Directives available in this schema or applied to this AST node. */
+  readonly directives?: ReadonlyArray<ConstDirectiveNode> | undefined;
+  /** Fields declared by this struct type extension. */
+  readonly fields?: ReadonlyArray<InputValueDefinitionNode> | undefined;
 }
 
 /** An input object type extension. */

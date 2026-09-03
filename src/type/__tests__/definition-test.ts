@@ -15,10 +15,12 @@ import type {
   GraphQLNullableType,
   GraphQLObjectTypeConfig,
   GraphQLScalarTypeConfig,
+  GraphQLStructObjectTypeConfig,
   GraphQLType,
   GraphQLUnionTypeConfig,
 } from '../definition.ts';
 import {
+  assertStructObjectType,
   GraphQLEnumType,
   GraphQLInputObjectType,
   GraphQLInterfaceType,
@@ -26,6 +28,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from '../definition.ts';
 import { GraphQLString } from '../scalars.ts';
@@ -46,6 +49,10 @@ const InterfaceType = new GraphQLInterfaceType({
 });
 const UnionType = new GraphQLUnionType({ name: 'Union', types: [ObjectType] });
 const EnumType = new GraphQLEnumType({ name: 'Enum', values: { foo: {} } });
+const StructObjectType = new GraphQLStructObjectType({
+  name: 'StructObject',
+  fields: { someStructField: { type: GraphQLString } },
+});
 const InputObjectType = new GraphQLInputObjectType({
   name: 'InputObject',
   fields: { someInputField: { type: GraphQLString } },
@@ -803,6 +810,59 @@ describe('Type System: Enums', () => {
     });
     expect(() => enumType.getValues()).to.throw(
       'Names must only contain [_a-zA-Z0-9] but "bad-name" does not.',
+    );
+  });
+});
+
+describe('Type System: Struct Objects', () => {
+  it('can be converted from a minimal configuration object', () => {
+    const structObject = new GraphQLStructObjectType({
+      name: 'SomeStructObject',
+      fields: {},
+    });
+    expect(structObject.toConfig()).to.deep.equal({
+      name: 'SomeStructObject',
+      description: undefined,
+      fields: {},
+      isOneOf: false,
+      isInputObject: false,
+      extensions: {},
+      astNode: undefined,
+      extensionASTNodes: [],
+    });
+  });
+
+  it('can be converted to a configuration object', () => {
+    const someStructObjectConfig: GraphQLStructObjectTypeConfig = {
+      name: 'SomeStructObject',
+      description: 'SomeStructObject description.',
+      fields: {
+        input: {
+          description: 'Field description.',
+          type: ScalarType,
+          defaultValue: undefined,
+          default: { value: 'DefaultValue' },
+          deprecationReason: 'Field deprecation reason.',
+          extensions: { someExtension: 'extension' },
+          astNode: dummyAny,
+        },
+      },
+      isOneOf: true,
+      isInputObject: false,
+      extensions: { someExtension: 'extension' },
+      astNode: dummyAny,
+      extensionASTNodes: [dummyAny],
+    };
+    const someStructObject = new GraphQLStructObjectType(
+      someStructObjectConfig,
+    );
+    expect(someStructObject.toConfig()).to.deep.equal(someStructObjectConfig);
+  });
+
+  it('asserts struct object types', () => {
+    expect(assertStructObjectType(StructObjectType)).to.equal(StructObjectType);
+    expect(() => assertStructObjectType(ObjectType)).to.throw(
+      'Expected Object to be a GraphQL Struct Object type.',
     );
   });
 });

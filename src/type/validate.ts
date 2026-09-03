@@ -41,10 +41,10 @@ import type {
   GraphQLDefaultInput,
   GraphQLEnumType,
   GraphQLInputField,
-  GraphQLInputObjectType,
   GraphQLInputType,
   GraphQLInterfaceType,
   GraphQLObjectType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from './definition.ts';
 import {
@@ -61,6 +61,7 @@ import {
   isOutputType,
   isRequiredArgument,
   isRequiredInputField,
+  isStructObjectType,
   isUnionType,
 } from './definition.ts';
 import { GraphQLDeprecatedDirective, isDirective } from './directives.ts';
@@ -373,7 +374,7 @@ function uncoerceDefaultValue(value: unknown, type: GraphQLInputType): unknown {
     return [uncoerceDefaultValue(value, type.ofType)];
   }
 
-  if (isInputObjectType(type)) {
+  if (isStructObjectType(type)) {
     invariant(isObjectLike(value));
     const fieldDefs = type.getFields();
     return mapValue(value, (fieldValue, fieldName) => {
@@ -409,7 +410,7 @@ function validateTypes(context: SchemaValidationContext): void {
     createInputObjectDefaultValueCircularRefsValidator(context);
   const typeMap = context.schema.getTypeMap();
   const finiteValueStates = new Map<
-    GraphQLInputObjectType,
+    GraphQLStructObjectType,
     InputObjectFiniteValueState
   >();
 
@@ -454,13 +455,21 @@ function validateTypes(context: SchemaValidationContext): void {
 
       // Ensure Input Objects do not contain invalid default value circular references.
       validateInputObjectDefaultValueCircularRefs(type);
+    } else if (isStructObjectType(type)) {
+      // Ensure Struct fields are valid.
+      validateInputFields(context, type);
+
+      initializeInputObjectFiniteValueState(type);
+
+      // Ensure Structs do not contain invalid default value circular references.
+      validateInputObjectDefaultValueCircularRefs(type);
     }
   }
 
   detectInputObjectNonFiniteValues(context, finiteValueStates);
 
   function initializeInputObjectFiniteValueState(
-    inputObj: GraphQLInputObjectType,
+    inputObj: GraphQLStructObjectType,
   ): void {
     finiteValueStates.set(inputObj, {
       inputObj,
@@ -725,13 +734,13 @@ function validateEnumValues(
 
 function validateInputFields(
   context: SchemaValidationContext,
-  inputObj: GraphQLInputObjectType,
+  inputObj: GraphQLStructObjectType,
 ): void {
   const fields = Object.values(inputObj.getFields());
 
   if (fields.length === 0) {
     context.reportError(
-      `Input Object type ${inputObj} must define one or more fields.`,
+      `${inputObj.isInputObject ? 'Input Object' : 'Struct'} type ${inputObj} must define one or more fields.`,
       [inputObj.astNode, ...inputObj.extensionASTNodes],
     );
   }
@@ -766,7 +775,7 @@ function validateInputFields(
 }
 
 function validateOneOfInputObjectField(
-  type: GraphQLInputObjectType,
+  type: GraphQLStructObjectType,
   field: GraphQLInputField,
   context: SchemaValidationContext,
 ): void {
@@ -787,11 +796,11 @@ function validateOneOfInputObjectField(
 
 interface InputObjectFiniteValueTarget {
   field: GraphQLInputField;
-  target: GraphQLInputObjectType;
+  target: GraphQLStructObjectType;
 }
 
 interface InputObjectFiniteValueState {
-  inputObj: GraphQLInputObjectType;
+  inputObj: GraphQLStructObjectType;
   targets: Array<InputObjectFiniteValueTarget>;
   dependents: Array<InputObjectFiniteValueState>;
   unresolvedTargetCount: number;
@@ -803,7 +812,7 @@ interface InputObjectFiniteValueState {
 function detectInputObjectNonFiniteValues(
   context: SchemaValidationContext,
   finiteValueStates: ReadonlyMap<
-    GraphQLInputObjectType,
+    GraphQLStructObjectType,
     InputObjectFiniteValueState
   >,
 ): void {
@@ -863,13 +872,13 @@ function detectInputObjectNonFiniteValues(
 
   // Tracks already visited types to ensure that cycles are not redundantly
   // reported.
-  const visitedTypes = new Set<GraphQLInputObjectType>();
+  const visitedTypes = new Set<GraphQLStructObjectType>();
 
   // Array of fields used to produce meaningful errors.
   const fieldPath: Array<{ fieldStr: string; astNode: Maybe<ASTNode> }> = [];
 
   // Position in the field path.
-  const fieldPathIndexByType = new Map<GraphQLInputObjectType, number>();
+  const fieldPathIndexByType = new Map<GraphQLStructObjectType, number>();
 
   for (const state of finiteValueStates.values()) {
     if (!state.hasFiniteValue) {
@@ -926,24 +935,24 @@ function detectInputObjectNonFiniteValues(
 }
 
 function getFiniteValueTarget(
-  inputObj: GraphQLInputObjectType,
+  inputObj: GraphQLStructObjectType,
   fieldType: GraphQLInputType,
-): GraphQLInputObjectType | undefined {
+): GraphQLStructObjectType | undefined {
   if (inputObj.isOneOf) {
-    if (isInputObjectType(fieldType)) {
+    if (isStructObjectType(fieldType)) {
       return fieldType;
     }
     return;
   }
 
-  if (isNonNullType(fieldType) && isInputObjectType(fieldType.ofType)) {
+  if (isNonNullType(fieldType) && isStructObjectType(fieldType.ofType)) {
     return fieldType.ofType;
   }
 }
 
 function createInputObjectDefaultValueCircularRefsValidator(
   context: SchemaValidationContext,
-): (inputObj: GraphQLInputObjectType) => void {
+): (inputObj: GraphQLStructObjectType) => void {
   // Modified copy of algorithm from 'src/validation/rules/NoFragmentCycles.js'.
   // Tracks already visited types to maintain O(N) and to ensure that cycles
   // are not redundantly reported.
@@ -961,7 +970,7 @@ function createInputObjectDefaultValueCircularRefsValidator(
   // It does not terminate when a cycle was found but continues to explore
   // the graph to find all possible cycles.
   return function validateInputObjectDefaultValueCircularRefs(
-    inputObj: GraphQLInputObjectType,
+    inputObj: GraphQLStructObjectType,
   ): void {
     // Start with an empty object as a way to visit every field in this input
     // object type and apply every default value.
@@ -969,7 +978,7 @@ function createInputObjectDefaultValueCircularRefsValidator(
   };
 
   function detectValueDefaultValueCycle(
-    inputObj: GraphQLInputObjectType,
+    inputObj: GraphQLStructObjectType,
     defaultValue: unknown,
   ): void {
     // If the value is a List, recursively check each entry for a cycle.
@@ -987,8 +996,8 @@ function createInputObjectDefaultValueCircularRefsValidator(
     for (const field of Object.values(inputObj.getFields())) {
       const namedFieldType = getNamedType(field.type);
 
-      // Only input object type fields can result in a cycle.
-      if (!isInputObjectType(namedFieldType)) {
+      // Only struct/input object type fields can result in a cycle.
+      if (!isStructObjectType(namedFieldType)) {
         continue;
       }
 
@@ -1008,7 +1017,7 @@ function createInputObjectDefaultValueCircularRefsValidator(
   }
 
   function detectLiteralDefaultValueCycle(
-    inputObj: GraphQLInputObjectType,
+    inputObj: GraphQLStructObjectType,
     defaultValue: ConstValueNode,
   ): void {
     // If the value is a List, recursively check each entry for a cycle.
@@ -1027,8 +1036,8 @@ function createInputObjectDefaultValueCircularRefsValidator(
     for (const field of Object.values(inputObj.getFields())) {
       const namedFieldType = getNamedType(field.type);
 
-      // Only input object type fields can result in a cycle.
-      if (!isInputObjectType(namedFieldType)) {
+      // Only struct/input object type fields can result in a cycle.
+      if (!isStructObjectType(namedFieldType)) {
         continue;
       }
 
@@ -1052,7 +1061,7 @@ function createInputObjectDefaultValueCircularRefsValidator(
 
   function detectFieldDefaultValueCycle(
     field: GraphQLInputField,
-    fieldType: GraphQLInputObjectType,
+    fieldType: GraphQLStructObjectType,
     fieldStr: string,
   ): void {
     // Only a field with a default value can result in a cycle.

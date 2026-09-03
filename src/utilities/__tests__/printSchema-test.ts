@@ -17,6 +17,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLScalarType,
+  GraphQLStructObjectType,
   GraphQLUnionType,
 } from '../../type/definition.ts';
 import { GraphQLDirective } from '../../type/directives.ts';
@@ -129,6 +130,47 @@ describe('Type System Printer', () => {
     expectPrintedSchema(schema).to.equal(dedent`
       type Foo {
         str: String
+      }
+    `);
+  });
+
+  it('Print Struct Object Field', () => {
+    const GeoPoint = new GraphQLStructObjectType({
+      name: 'GeoPoint',
+      description: 'A geographic point.',
+      fields: {
+        lat: {
+          description: 'Latitude.',
+          type: new GraphQLNonNull(GraphQLInt),
+        },
+        lon: { type: new GraphQLNonNull(GraphQLInt) },
+      },
+    });
+    const schema = new GraphQLSchema({ types: [GeoPoint] });
+
+    expectPrintedSchema(schema).to.equal(dedent`
+      """A geographic point."""
+      struct GeoPoint {
+        """Latitude."""
+        lat: Int!
+        lon: Int!
+      }
+    `);
+  });
+
+  it('Print OneOf Struct Object Field', () => {
+    const SearchFilter = new GraphQLStructObjectType({
+      name: 'SearchFilter',
+      fields: {
+        text: { type: GraphQLString },
+      },
+      isOneOf: true,
+    });
+    const schema = new GraphQLSchema({ types: [SearchFilter] });
+
+    expectPrintedSchema(schema).to.equal(dedent`
+      struct SearchFilter @oneOf {
+        text: String
       }
     `);
   });
@@ -834,7 +876,7 @@ describe('Type System Printer', () => {
       """
       Indicates exactly one field must be supplied and this field must not be \`null\`.
       """
-      directive @oneOf on INPUT_OBJECT
+      directive @oneOf on STRUCT | INPUT_OBJECT
 
       """
       A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
@@ -901,6 +943,11 @@ describe('Type System Printer', () => {
 
         """Indicates this type is an enum. \`enumValues\` is a valid field."""
         ENUM
+
+        """
+        Indicates this type is a struct. \`fields\` and \`isOneOf\` are valid fields.
+        """
+        STRUCT_OBJECT
 
         """
         Indicates this type is an input object. \`inputFields\` is a valid field.
@@ -1024,6 +1071,9 @@ describe('Type System Printer', () => {
 
         """Location adjacent to an enum value definition."""
         ENUM_VALUE
+
+        """Location adjacent to a struct type definition."""
+        STRUCT
 
         """Location adjacent to an input object type definition."""
         INPUT_OBJECT

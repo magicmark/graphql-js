@@ -30,6 +30,7 @@ import type {
   GraphQLOutputType,
   GraphQLResolveInfo,
   GraphQLResolveInfoHelpers,
+  GraphQLStructObjectType,
 } from '../type/definition.ts';
 import {
   isAbstractType,
@@ -37,6 +38,7 @@ import {
   isListType,
   isNonNullType,
   isObjectType,
+  isStructObjectType,
 } from '../type/definition.ts';
 import type { GraphQLSchema } from '../type/schema.ts';
 
@@ -830,6 +832,17 @@ export class Executor<
       );
     }
 
+    // If field type is a Struct, complete by walking its defined fields.
+    if (isStructObjectType(returnType)) {
+      return this.completeStructValue(
+        returnType,
+        fieldDetailsList,
+        info,
+        path,
+        result,
+      );
+    }
+
     // If field type is Object, execute and complete all sub-selections.
     if (isObjectType(returnType)) {
       return this.completeObjectValue(
@@ -1245,6 +1258,90 @@ export class Executor<
       );
     }
     return coerced;
+  }
+
+  /**
+   * Implements "Completing Struct Values" from the spec.
+   *
+   * Structs have no resolvers. Values are pulled directly from the result map,
+   * with defaults applied for missing fields, then each field value is
+   * completed recursively via completeValue.
+   *
+   * @internal
+   */
+  completeStructValue(
+    returnType: GraphQLStructObjectType,
+    fieldDetailsList: FieldDetailsList,
+    info: GraphQLResolveInfo,
+    path: Path,
+    result: unknown,
+  ): PromiseOrValue<ObjMap<unknown>> {
+    const resultMap = result as ObjMap<unknown>;
+
+    if (returnType.isOneOf) {
+      const nonNullKeys = Object.keys(resultMap).filter(
+        (k) => resultMap[k] != null,
+      );
+      if (nonNullKeys.length !== 1) {
+        throw new GraphQLError(
+          `Struct type "${returnType}" must have exactly one non-null field, but got ${nonNullKeys.length}.`,
+          { nodes: toNodes(fieldDetailsList) },
+        );
+      }
+    }
+
+    const fields = returnType.getFields();
+    const completedMap = Object.create(null);
+    let containsPromise = false;
+
+    for (const [fieldName, fieldDef] of Object.entries(fields)) {
+      const fieldPath = addPath(path, fieldName, returnType.name);
+      let fieldValue: unknown = resultMap[fieldName];
+
+      if (fieldValue === undefined) {
+        fieldValue =
+          fieldDef.default !== undefined ? fieldDef.default.value : null;
+      }
+
+      // Struct field types are valid in both input and output positions.
+      const fieldType = fieldDef.type as unknown as GraphQLOutputType;
+
+      try {
+        const completed = this.completeValue(
+          fieldType,
+          fieldDetailsList,
+          info,
+          fieldPath,
+          fieldValue,
+          undefined,
+        );
+
+        if (isPromise(completed)) {
+          containsPromise = true;
+          completedMap[fieldName] = completed.then(
+            undefined,
+            (rawError: unknown) => {
+              this.handleFieldError(
+                rawError,
+                fieldType,
+                fieldDetailsList,
+                fieldPath,
+              );
+              return null;
+            },
+          );
+        } else {
+          completedMap[fieldName] = completed;
+        }
+      } catch (rawError) {
+        this.handleFieldError(rawError, fieldType, fieldDetailsList, fieldPath);
+        completedMap[fieldName] = null;
+      }
+    }
+
+    return containsPromise
+      ? promiseForObject(completedMap, this.promiseAll)
+      : completedMap;
   }
 
   /**

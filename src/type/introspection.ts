@@ -29,6 +29,7 @@ import {
   isNonNullType,
   isObjectType,
   isScalarType,
+  isStructObjectType,
   isUnionType,
 } from './definition.ts';
 import type { GraphQLDirective } from './directives.ts';
@@ -221,6 +222,10 @@ export const __DirectiveLocation: GraphQLEnumType = new GraphQLEnumType({
       value: DirectiveLocation.ENUM_VALUE,
       description: 'Location adjacent to an enum value definition.',
     },
+    STRUCT: {
+      value: DirectiveLocation.STRUCT,
+      description: 'Location adjacent to a struct type definition.',
+    },
     INPUT_OBJECT: {
       value: DirectiveLocation.INPUT_OBJECT,
       description: 'Location adjacent to an input object type definition.',
@@ -264,6 +269,9 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
           if (isInputObjectType(type)) {
             return TypeKind.INPUT_OBJECT;
           }
+          if (isStructObjectType(type)) {
+            return TypeKind.STRUCT_OBJECT;
+          }
           if (isListType(type)) {
             return TypeKind.LIST;
           }
@@ -302,6 +310,20 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
         resolve(type, { includeDeprecated }) {
           if (isObjectType(type) || isInterfaceType(type)) {
             const fields = Object.values(type.getFields());
+            return includeDeprecated === true
+              ? fields
+              : fields.filter((field) => field.deprecationReason == null);
+          }
+          if (isStructObjectType(type) && !isInputObjectType(type)) {
+            const fields = Object.values(type.getFields()).map((f) => ({
+              name: f.name,
+              description: f.description,
+              args: [],
+              type: f.type,
+              deprecationReason: f.deprecationReason,
+              extensions: f.extensions,
+              astNode: f.astNode,
+            }));
             return includeDeprecated === true
               ? fields
               : fields.filter((field) => field.deprecationReason == null);
@@ -365,7 +387,7 @@ export const __Type: GraphQLObjectType = new GraphQLObjectType({
       isOneOf: {
         type: GraphQLBoolean,
         resolve: (type) => {
-          if (isInputObjectType(type)) {
+          if (isStructObjectType(type)) {
             return type.isOneOf;
           }
         },
@@ -497,6 +519,7 @@ export const TypeKind = {
   INTERFACE: 'INTERFACE' as const,
   UNION: 'UNION' as const,
   ENUM: 'ENUM' as const,
+  STRUCT_OBJECT: 'STRUCT_OBJECT' as const,
   INPUT_OBJECT: 'INPUT_OBJECT' as const,
   LIST: 'LIST' as const,
   NON_NULL: 'NON_NULL' as const,
@@ -537,6 +560,11 @@ export const __TypeKind: GraphQLEnumType = new GraphQLEnumType({
       value: TypeKind.ENUM,
       description:
         'Indicates this type is an enum. `enumValues` is a valid field.',
+    },
+    STRUCT_OBJECT: {
+      value: TypeKind.STRUCT_OBJECT,
+      description:
+        'Indicates this type is a struct. `fields` and `isOneOf` are valid fields.',
     },
     INPUT_OBJECT: {
       value: TypeKind.INPUT_OBJECT,

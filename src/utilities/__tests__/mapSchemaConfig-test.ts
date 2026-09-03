@@ -586,6 +586,56 @@ describe('mapSchemaConfig', () => {
     });
   });
 
+  describe('struct object type mapping', () => {
+    it('keeps struct object types when no struct mapper is provided', () => {
+      const sdl = `
+        struct SomeStruct {
+          field: String
+        }
+      `;
+
+      const schemaConfig = buildSchema(sdl).toConfig();
+
+      expectSchemaMapping(schemaConfig, () => ({}), sdl);
+    });
+
+    it('can map struct object types', () => {
+      const sdl = `
+        struct SomeStruct {
+          field: String
+        }
+      `;
+
+      const schemaConfig = buildSchema(sdl).toConfig();
+
+      expectSchemaMapping(
+        schemaConfig,
+        () => ({
+          [SchemaElementKind.INPUT_FIELD]: (config) => ({
+            ...config,
+            description: 'Some input field description',
+          }),
+          [SchemaElementKind.STRUCT_OBJECT]: (config) => {
+            expect(config.fields().field.description).to.equal(
+              'Some input field description',
+            );
+            return {
+              ...config,
+              description: 'Some struct object description',
+            };
+          },
+        }),
+        `
+          """Some struct object description"""
+          struct SomeStruct {
+            """Some input field description"""
+            field: String
+          }
+        `,
+      );
+    });
+  });
+
   describe('input object type mapping', () => {
     it('can map input object types', () => {
       const sdl = 'input SomeInput';

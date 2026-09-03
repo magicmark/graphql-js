@@ -147,6 +147,9 @@ function getDirectiveLocationForASTPath(
       return DirectiveLocation.ENUM;
     case Kind.ENUM_VALUE_DEFINITION:
       return DirectiveLocation.ENUM_VALUE;
+    case Kind.STRUCT_TYPE_DEFINITION:
+    case Kind.STRUCT_TYPE_EXTENSION:
+      return DirectiveLocation.STRUCT;
     case Kind.INPUT_OBJECT_TYPE_DEFINITION:
     case Kind.INPUT_OBJECT_TYPE_EXTENSION:
       return DirectiveLocation.INPUT_OBJECT;
@@ -154,7 +157,9 @@ function getDirectiveLocationForASTPath(
       const parentNode = ancestors.at(-3);
       invariant(parentNode != null && 'kind' in parentNode);
       return parentNode.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION ||
-        parentNode.kind === Kind.INPUT_OBJECT_TYPE_EXTENSION
+        parentNode.kind === Kind.INPUT_OBJECT_TYPE_EXTENSION ||
+        parentNode.kind === Kind.STRUCT_TYPE_DEFINITION ||
+        parentNode.kind === Kind.STRUCT_TYPE_EXTENSION
         ? DirectiveLocation.INPUT_FIELD_DEFINITION
         : DirectiveLocation.ARGUMENT_DEFINITION;
     }

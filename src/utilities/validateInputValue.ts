@@ -20,10 +20,10 @@ import { print } from '../language/printer.ts';
 import type { GraphQLInputType } from '../type/definition.ts';
 import {
   assertLeafType,
-  isInputObjectType,
   isListType,
   isNonNullType,
   isRequiredInputField,
+  isStructObjectType,
 } from '../type/definition.ts';
 
 import type { FragmentVariableValues } from '../execution/collectFields.ts';
@@ -163,7 +163,7 @@ function validateInputValueImpl(
         );
       }
     }
-  } else if (isInputObjectType(type)) {
+  } else if (isStructObjectType(type)) {
     if (!isObjectLike(inputValue) || Array.isArray(inputValue)) {
       reportInvalidValue(
         onError,
@@ -471,7 +471,7 @@ function validateInputLiteralImpl(
         );
       }
     }
-  } else if (isInputObjectType(type)) {
+  } else if (isStructObjectType(type)) {
     if (valueNode.kind !== Kind.OBJECT) {
       reportInvalidLiteral(
         context.onError,

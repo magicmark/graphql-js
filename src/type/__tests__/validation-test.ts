@@ -890,6 +890,35 @@ describe('Type System: Input Objects must have fields', () => {
     ]);
   });
 
+  it('rejects a Struct Object type with missing fields', () => {
+    let schema = buildSchema(`
+      type Query {
+        field(arg: SomeStructObject): String
+      }
+
+      struct SomeStructObject
+    `);
+
+    schema = extendSchema(
+      schema,
+      parse(`
+        directive @test on STRUCT
+
+        extend struct SomeStructObject @test
+      `),
+    );
+
+    expectJSON(validateSchema(schema)).toDeepEqual([
+      {
+        message: 'Struct type SomeStructObject must define one or more fields.',
+        locations: [
+          { line: 6, column: 7 },
+          { line: 4, column: 9 },
+        ],
+      },
+    ]);
+  });
+
   it('accepts an Input Object with breakable circular reference', () => {
     const schema = buildSchema(`
       type Query {
@@ -1482,8 +1511,7 @@ describe('Type System: Object fields must have output types', () => {
   for (const type of notOutputTypes) {
     const typeStr = inspect(type);
     it(`rejects a non-output type as an Object field type: ${typeStr}`, () => {
-      // @ts-expect-error
-      const schema = schemaWithObjectField({ type });
+      const schema = schemaWithObjectField({ type: type as any });
       expectJSON(validateSchema(schema)).toDeepEqual([
         {
           message: `The type of BadObject.badField must be Output Type but got: ${typeStr}.`,
@@ -1836,8 +1864,7 @@ describe('Type System: Interface fields must have output types', () => {
   for (const type of notOutputTypes) {
     const typeStr = inspect(type);
     it(`rejects a non-output type as an Interface field type: ${typeStr}`, () => {
-      // @ts-expect-error
-      const schema = schemaWithInterfaceField({ type });
+      const schema = schemaWithInterfaceField({ type: type as any });
       expectJSON(validateSchema(schema)).toDeepEqual([
         {
           message: `The type of BadImplementing.badField must be Output Type but got: ${typeStr}.`,
@@ -2418,6 +2445,19 @@ describe('Type System: OneOf Input Object fields must be nullable', () => {
       }
 
       input A @oneOf {
+        a: Int
+      }
+    `);
+    expectJSON(validateSchema(schema)).toDeepEqual([]);
+  });
+
+  it('accepts a OneOf Struct Object with a scalar field', () => {
+    const schema = buildSchema(`
+      type Query {
+        test(arg: A): Int
+      }
+
+      struct A @oneOf {
         a: Int
       }
     `);

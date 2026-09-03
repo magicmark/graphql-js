@@ -258,6 +258,12 @@ const printDocASTReducer: ASTReducer<string> = {
       wrap('', description, '\n') + join([name, join(directives, ' ')], ' '),
   },
 
+  StructTypeDefinition: {
+    leave: ({ description, name, directives, fields }) =>
+      wrap('', description, '\n') +
+      join(['struct', name, join(directives, ' '), block(fields)], ' '),
+  },
+
   InputObjectTypeDefinition: {
     leave: ({ description, name, directives, fields }) =>
       wrap('', description, '\n') +
@@ -342,6 +348,11 @@ const printDocASTReducer: ASTReducer<string> = {
   EnumTypeExtension: {
     leave: ({ name, directives, values }) =>
       join(['extend enum', name, join(directives, ' '), block(values)], ' '),
+  },
+
+  StructTypeExtension: {
+    leave: ({ name, directives, fields }) =>
+      join(['extend struct', name, join(directives, ' '), block(fields)], ' '),
   },
 
   InputObjectTypeExtension: {

@@ -25,9 +25,9 @@ import type {
 } from './definition.ts';
 import {
   getNamedType,
-  isInputObjectType,
   isInterfaceType,
   isObjectType,
+  isStructObjectType,
   isUnionType,
 } from './definition.ts';
 import type { GraphQLDirective } from './directives.ts';
@@ -935,7 +935,7 @@ function collectReferencedTypes(
           collectReferencedTypes(arg.type, typeSet);
         }
       }
-    } else if (isInputObjectType(namedType)) {
+    } else if (isStructObjectType(namedType)) {
       for (const field of Object.values(namedType.getFields())) {
         collectReferencedTypes(field.type, typeSet);
       }

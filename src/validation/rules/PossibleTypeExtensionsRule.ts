@@ -22,6 +22,7 @@ import {
   isInterfaceType,
   isObjectType,
   isScalarType,
+  isStructObjectType,
   isUnionType,
 } from '../../type/definition.ts';
 
@@ -70,6 +71,7 @@ export function PossibleTypeExtensionsRule(
     InterfaceTypeExtension: checkExtension,
     UnionTypeExtension: checkExtension,
     EnumTypeExtension: checkExtension,
+    StructTypeExtension: checkExtension,
     InputObjectTypeExtension: checkExtension,
   };
 
@@ -117,6 +119,7 @@ const defKindToExtKind = {
   [Kind.INTERFACE_TYPE_DEFINITION]: Kind.INTERFACE_TYPE_EXTENSION,
   [Kind.UNION_TYPE_DEFINITION]: Kind.UNION_TYPE_EXTENSION,
   [Kind.ENUM_TYPE_DEFINITION]: Kind.ENUM_TYPE_EXTENSION,
+  [Kind.STRUCT_TYPE_DEFINITION]: Kind.STRUCT_TYPE_EXTENSION,
   [Kind.INPUT_OBJECT_TYPE_DEFINITION]: Kind.INPUT_OBJECT_TYPE_EXTENSION,
 } as const;
 
@@ -138,6 +141,9 @@ function typeToExtKind(type: GraphQLNamedType): Kind {
   }
   if (isInputObjectType(type)) {
     return Kind.INPUT_OBJECT_TYPE_EXTENSION;
+  }
+  if (isStructObjectType(type)) {
+    return Kind.STRUCT_TYPE_EXTENSION;
     /* node:coverage ignore next 4 */
   }
   // Not reachable. All possible types have been considered
@@ -156,6 +162,8 @@ function extensionKindToTypeName(kind: Kind): string {
       return 'union';
     case Kind.ENUM_TYPE_EXTENSION:
       return 'enum';
+    case Kind.STRUCT_TYPE_EXTENSION:
+      return 'struct';
     case Kind.INPUT_OBJECT_TYPE_EXTENSION:
       return 'input object';
     // Not reachable. All possible types have been considered

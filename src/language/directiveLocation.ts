@@ -40,6 +40,8 @@ export const DirectiveLocation = {
   ENUM: 'ENUM' as const,
   /** Directive location for enum value definitions. */
   ENUM_VALUE: 'ENUM_VALUE' as const,
+  /** Directive location for struct type definitions and extensions. */
+  STRUCT: 'STRUCT' as const,
   /** Directive location for input object type definitions and extensions. */
   INPUT_OBJECT: 'INPUT_OBJECT' as const,
   /** Directive location for input object field definitions. */
